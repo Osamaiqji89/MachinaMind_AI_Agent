@@ -16,12 +16,13 @@ class DatabaseHandler:
     """Zentrale DB-Verwaltung mit SQLite (erweiterbar für PostgreSQL)"""
 
     def __init__(self, db_path: str = "MachinaData.db"):
-        self.db_path = Path(db_path)
+        self.db_path = db_path if db_path == ":memory:" else Path(db_path)
         self._ensure_db_exists()
 
     def _ensure_db_exists(self) -> None:
         """Erstellt DB-Datei falls nicht vorhanden"""
-        if not self.db_path.exists():
+        # For in-memory DB or if file doesn't exist, initialize schema
+        if self.db_path == ":memory:" or not Path(self.db_path).exists():
             logger.info(f"Creating new database at {self.db_path}")
             self._init_schema()
 

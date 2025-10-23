@@ -9,8 +9,9 @@ from backend.api.main import app
 
 @pytest.fixture
 def client():
-    """Test Client"""
-    return TestClient(app)
+    """Test Client with lifespan context"""
+    with TestClient(app) as test_client:
+        yield test_client
 
 
 def test_health_check(client):
