@@ -268,7 +268,9 @@ class LLMAgent:
     def _fallback_response(self, user_message: str, context: dict | None) -> str:
         """Fallback wenn kein LLM verfügbar"""
         response = f"**Ihre Frage:** {user_message}\n\n"
-        response += "ℹ️ _LLM antwortet nicht oder ist nicht verfügbar. Hier sind die verfügbaren Daten:_\n\n"
+        response += (
+            "ℹ️ _LLM antwortet nicht oder ist nicht verfügbar. Hier sind die verfügbaren Daten:_\n\n"
+        )
 
         if context:
             if "machine" in context:

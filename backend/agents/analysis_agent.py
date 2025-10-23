@@ -143,7 +143,9 @@ class AnalysisAgent:
                 iso_forest = _IsolationForest(contamination=0.1, random_state=42)
                 predictions = iso_forest.fit_predict(values.reshape(-1, 1))
 
-                for _i, (pred, val, ts) in enumerate(zip(predictions, values, timestamps, strict=False)):
+                for _i, (pred, val, ts) in enumerate(
+                    zip(predictions, values, timestamps, strict=False)
+                ):
                     if pred == -1:  # Anomalie
                         # Nur hinzufügen wenn nicht schon von Z-Score erkannt
                         existing = any(a["timestamp"] == ts for a in anomalies)

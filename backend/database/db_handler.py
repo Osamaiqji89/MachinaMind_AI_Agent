@@ -273,9 +273,7 @@ class DatabaseHandler:
             )
             return cursor.lastrowid
 
-    def get_reports(
-        self, machine_id: int | None = None, limit: int = 20
-    ) -> list[dict[str, Any]]:
+    def get_reports(self, machine_id: int | None = None, limit: int = 20) -> list[dict[str, Any]]:
         """Holt Reports"""
         query = "SELECT * FROM reports"
         params: list[Any] = []

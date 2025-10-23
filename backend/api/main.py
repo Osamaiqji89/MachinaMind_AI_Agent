@@ -314,9 +314,7 @@ async def analyze_machine(request: AnalysisRequest):
 
 
 @app.get("/reports", tags=["Reports"])
-async def get_reports(
-    machine_id: int | None = Query(None), limit: int = Query(20, ge=1, le=100)
-):
+async def get_reports(machine_id: int | None = Query(None), limit: int = Query(20, ge=1, le=100)):
     """Reports abrufen"""
     db: DatabaseHandler = app.state.db
     reports = db.get_reports(machine_id, limit)

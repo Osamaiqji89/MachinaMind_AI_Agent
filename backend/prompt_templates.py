@@ -3,7 +3,6 @@ Zentrale Prompt-Templates für LLM-Agenten
 Versioniert und wiederverwendbar
 """
 
-
 # ==================== System Prompts ====================
 
 SYSTEM_PROMPT = """Du bist ein spezialisierter AI-Assistent für industrielle Maschinendatenanalyse.
