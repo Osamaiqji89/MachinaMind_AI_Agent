@@ -37,6 +37,7 @@ ignore = [
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]
 "backend/agents/analysis_agent.py" = ["E402"]  # Lazy loading (PyTorch)
+"backend/agents/llm_agent.py" = ["E402"]  # Lazy loading (OpenAI, RAG)
 "backend/rag_engine/rag_manager.py" = ["E402"]  # Lazy loading (PyTorch)
 "backend/api/main.py" = ["E402"]  # Settings import after sys.path modification
 
