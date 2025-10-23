@@ -75,7 +75,9 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.8.1'
+          version: '6.5.3'
+          host: 'windows'
+          target: 'desktop'
           modules: 'qtcharts'
           cache: true
       
@@ -168,7 +170,9 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.8.1'
+          version: '6.5.3'
+          host: 'windows'
+          target: 'desktop'
           modules: 'qtcharts'
           cache: true
       
