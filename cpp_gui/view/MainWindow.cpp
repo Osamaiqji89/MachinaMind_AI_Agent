@@ -90,7 +90,7 @@ void MainWindow::setupUi() {
     topLayout->addWidget(themeButton);
     
     // Theme Toggle Funktionalität
-    connect(themeButton, &QPushButton::clicked, [this, themeButton]() {
+    connect(themeButton, &QPushButton::clicked, [themeButton]() {
         static bool isDarkMode = true;
         isDarkMode = !isDarkMode;
         
