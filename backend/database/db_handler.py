@@ -46,7 +46,8 @@ class DatabaseHandler:
             cursor = conn.cursor()
 
             # Machines Table
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS machines (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL UNIQUE,
@@ -56,10 +57,12 @@ class DatabaseHandler:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """)
+            """
+            )
 
             # Measurements Table (Sensor-Daten)
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS measurements (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     machine_id INTEGER NOT NULL,
@@ -69,14 +72,16 @@ class DatabaseHandler:
                     unit TEXT,
                     FOREIGN KEY (machine_id) REFERENCES machines(id) ON DELETE CASCADE
                 )
-            """)
+            """
+            )
             cursor.execute(
                 "CREATE INDEX IF NOT EXISTS idx_measurements_machine_time "
                 "ON measurements(machine_id, timestamp DESC)"
             )
 
             # Events Table (Warnungen, Fehler)
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     machine_id INTEGER NOT NULL,
@@ -86,14 +91,16 @@ class DatabaseHandler:
                     details_json TEXT,
                     FOREIGN KEY (machine_id) REFERENCES machines(id) ON DELETE CASCADE
                 )
-            """)
+            """
+            )
             cursor.execute(
                 "CREATE INDEX IF NOT EXISTS idx_events_machine_time "
                 "ON events(machine_id, timestamp DESC)"
             )
 
             # Reports Table (AI-generierte Analysen)
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS reports (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     machine_id INTEGER,
@@ -103,14 +110,19 @@ class DatabaseHandler:
                     metadata_json TEXT,
                     FOREIGN KEY (machine_id) REFERENCES machines(id) ON DELETE SET NULL
                 )
-            """)
+            """
+            )
 
             logger.info("Database schema initialized successfully")
 
     # ====================== MACHINES ======================
 
     def add_machine(
-        self, name: str, machine_type: str, location: Optional[str] = None, meta: Optional[str] = None
+        self,
+        name: str,
+        machine_type: str,
+        location: Optional[str] = None,
+        meta: Optional[str] = None,
     ) -> int:
         """Fügt neue Maschine hinzu"""
         with self.get_connection() as conn:
@@ -189,9 +201,7 @@ class DatabaseHandler:
             cursor.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
 
-    def get_latest_measurement(
-        self, machine_id: int, sensor_type: str
-    ) -> Optional[Dict[str, Any]]:
+    def get_latest_measurement(self, machine_id: int, sensor_type: str) -> Optional[Dict[str, Any]]:
         """Holt aktuellsten Messwert für Sensor"""
         measurements = self.get_measurements(machine_id, sensor_type, limit=1)
         return measurements[0] if measurements else None

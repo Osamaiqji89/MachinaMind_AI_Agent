@@ -12,18 +12,21 @@ from loguru import logger
 # Lazy import to avoid Windows DLL issues
 _IsolationForest = None
 
+
 def _ensure_sklearn():
     """Lazy load sklearn"""
     global _IsolationForest
     if _IsolationForest is None:
         try:
             from sklearn.ensemble import IsolationForest as IF
+
             _IsolationForest = IF
             return True
         except Exception as e:
             logger.warning(f"scikit-learn not available: {e}")
             return False
     return _IsolationForest is not None
+
 
 from database.db_handler import DatabaseHandler
 
@@ -42,7 +45,7 @@ class AnalysisAgent:
     ) -> Dict[str, Any]:
         """
         Hauptanalyse-Methode
-        
+
         Returns:
             Dict mit anomalies_detected, summary, details
         """
@@ -52,7 +55,7 @@ class AnalysisAgent:
             sensor_type=sensor_type,
             limit=1000,
         )
-        
+
         # Falls keine Daten, gib hilfreiche Meldung zurück
         if len(measurements) == 0:
             return {
@@ -67,7 +70,7 @@ class AnalysisAgent:
             # Als Approximation: Nehme die letzten X% der Daten
             from_index = max(0, len(measurements) - (time_range_minutes * 2))
             measurements = measurements[from_index:]
-        
+
         if len(measurements) < 10:
             return {
                 "anomalies_detected": 0,
@@ -103,7 +106,7 @@ class AnalysisAgent:
     def _detect_anomalies(self, sensor_name: str, data: List[Dict]) -> List[Dict]:
         """
         Anomalieerkennung mit mehreren Methoden
-        
+
         1. Z-Score (statistische Abweichung)
         2. IsolationForest (ML-basiert)
         """

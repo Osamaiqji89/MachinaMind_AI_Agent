@@ -37,6 +37,7 @@ except ImportError:
 
 # ==================== Pydantic Models ====================
 
+
 class HealthResponse(BaseModel):
     status: str
     timestamp: str
@@ -96,13 +97,14 @@ class AnalysisResponse(BaseModel):
 
 # ==================== Application Lifecycle ====================
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup & Shutdown Logic"""
     # Startup
     logger.info("🚀 Starting MachinaMindAIAgent Backend...")
     app.state.db = DatabaseHandler("MachinaData.db")
-    
+
     # Initialize agents (if available)
     if DataAgent:
         app.state.data_agent = DataAgent(app.state.db)
@@ -110,11 +112,11 @@ async def lifespan(app: FastAPI):
         app.state.analysis_agent = AnalysisAgent(app.state.db)
     if LLMAgent:
         app.state.llm_agent = LLMAgent()
-    
+
     logger.info("✅ Backend ready")
-    
+
     yield
-    
+
     # Shutdown
     logger.info("🛑 Shutting down MachinaMindAIAgent Backend...")
 
@@ -140,6 +142,7 @@ app.add_middleware(
 
 # ==================== Endpoints ====================
 
+
 @app.get("/", tags=["Root"])
 async def root():
     """API Root"""
@@ -156,7 +159,7 @@ async def health_check():
     """Health Check mit DB-Status"""
     db: DatabaseHandler = app.state.db
     stats = db.get_stats()
-    
+
     return HealthResponse(
         status="healthy",
         timestamp=datetime.now().isoformat(),
@@ -165,6 +168,7 @@ async def health_check():
 
 
 # ==================== Machines ====================
+
 
 @app.get("/machines", response_model=List[MachineResponse], tags=["Machines"])
 async def get_machines():
@@ -179,14 +183,15 @@ async def get_machine(machine_id: int):
     """Einzelne Maschine abrufen"""
     db: DatabaseHandler = app.state.db
     machine = db.get_machine(machine_id)
-    
+
     if not machine:
         raise HTTPException(status_code=404, detail="Machine not found")
-    
+
     return machine
 
 
 # ==================== Measurements ====================
+
 
 @app.get("/measurements/{machine_id}", response_model=List[MeasurementResponse], tags=["Data"])
 async def get_measurements(
@@ -196,16 +201,17 @@ async def get_measurements(
 ):
     """Messwerte für Maschine abrufen"""
     db: DatabaseHandler = app.state.db
-    
+
     # Prüfe ob Maschine existiert
     if not db.get_machine(machine_id):
         raise HTTPException(status_code=404, detail="Machine not found")
-    
+
     measurements = db.get_measurements(machine_id, sensor_type, limit)
     return measurements
 
 
 # ==================== Events ====================
+
 
 @app.get("/events", response_model=List[EventResponse], tags=["Events"])
 async def get_events(
@@ -221,6 +227,7 @@ async def get_events(
 
 # ==================== Chat ====================
 
+
 @app.post("/chat", response_model=ChatResponse, tags=["AI"])
 async def chat(request: ChatRequest):
     """
@@ -228,10 +235,10 @@ async def chat(request: ChatRequest):
     Kombiniert DB-Kontext, RAG und LLM für intelligente Antworten
     """
     db: DatabaseHandler = app.state.db
-    
+
     # Kontext sammeln
     context = {}
-    
+
     # Maschinen-spezifischer Kontext
     if request.machine_id:
         machine = db.get_machine(request.machine_id)
@@ -246,7 +253,7 @@ async def chat(request: ChatRequest):
     else:
         context["machines"] = db.get_all_machines()
         context["recent_events"] = db.get_events(limit=request.context_limit)
-    
+
     # LLM Query mit RAG-Unterstützung
     if LLMAgent and hasattr(app.state, "llm_agent"):
         llm: LLMAgent = app.state.llm_agent
@@ -255,7 +262,7 @@ async def chat(request: ChatRequest):
         # Fallback ohne LLM
         answer = f"[Demo Mode] Ihre Frage: '{request.message}'. Kontext: {len(context)} Elemente."
         sources = []
-    
+
     return ChatResponse(
         answer=answer,
         sources=sources,
@@ -266,6 +273,7 @@ async def chat(request: ChatRequest):
 
 # ==================== Analysis ====================
 
+
 @app.post("/analyze", response_model=AnalysisResponse, tags=["AI"])
 async def analyze_machine(request: AnalysisRequest):
     """
@@ -273,11 +281,11 @@ async def analyze_machine(request: AnalysisRequest):
     Verwendet AnalysisAgent für Anomalieerkennung
     """
     db: DatabaseHandler = app.state.db
-    
+
     # Prüfe ob Maschine existiert
     if not db.get_machine(request.machine_id):
         raise HTTPException(status_code=404, detail="Machine not found")
-    
+
     # Analysis durchführen
     if AnalysisAgent and hasattr(app.state, "analysis_agent"):
         agent: AnalysisAgent = app.state.analysis_agent
@@ -294,7 +302,7 @@ async def analyze_machine(request: AnalysisRequest):
             "summary": f"[Demo] Analysiert: {len(measurements)} Messwerte",
             "details": [],
         }
-    
+
     return AnalysisResponse(
         machine_id=request.machine_id,
         anomalies_detected=result.get("anomalies_detected", 0),
@@ -306,8 +314,11 @@ async def analyze_machine(request: AnalysisRequest):
 
 # ==================== Reports ====================
 
+
 @app.get("/reports", tags=["Reports"])
-async def get_reports(machine_id: Optional[int] = Query(None), limit: int = Query(20, ge=1, le=100)):
+async def get_reports(
+    machine_id: Optional[int] = Query(None), limit: int = Query(20, ge=1, le=100)
+):
     """Reports abrufen"""
     db: DatabaseHandler = app.state.db
     reports = db.get_reports(machine_id, limit)
@@ -322,12 +333,12 @@ async def create_report(
 ):
     """Neuen Report erstellen"""
     db: DatabaseHandler = app.state.db
-    
+
     if not report_text:
         raise HTTPException(status_code=400, detail="report_text required")
-    
+
     report_id = db.add_report(report_type, report_text, machine_id)
-    
+
     return {"id": report_id, "status": "created"}
 
 

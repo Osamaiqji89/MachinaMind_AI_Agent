@@ -22,7 +22,7 @@ class DataAgent:
     ) -> Optional[Dict[str, Any]]:
         """
         Sammelt vollständigen Kontext für eine Maschine
-        
+
         Returns:
             Dict mit machine, measurements, events, stats
         """

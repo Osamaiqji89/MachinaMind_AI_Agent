@@ -155,7 +155,9 @@ class DataSimulator:
     def run(self, duration: int = 0) -> None:
         """Startet kontinuierliche Simulation"""
         self._running = True
-        logger.info(f"Starting simulation ({len(self.machines)} machines, interval={self.interval}s)")
+        logger.info(
+            f"Starting simulation ({len(self.machines)} machines, interval={self.interval}s)"
+        )
 
         start_time = time.time()
         cycles = 0
@@ -195,15 +197,15 @@ if __name__ == "__main__":
     try:
         from pathlib import Path
         from rag_engine.rag_manager import RAGManager
-        
+
         pdf_files = list(Path(__file__).parent.glob("*.pdf"))
         if pdf_files:
             logger.info(f"📄 Found {len(pdf_files)} PDF(s) for RAG...")
-            
+
             # Prüfe ob bereits indiziert
             vector_store_path = Path(__file__).parent / "vector_store"
             index_exists = (vector_store_path / "faiss.index").exists()
-            
+
             if index_exists and "--reindex" not in sys.argv:
                 logger.info(f"ℹ️  Vector store exists. Use --reindex to rebuild.")
                 logger.info(f"✅ RAG ready (use existing index)")
@@ -211,19 +213,19 @@ if __name__ == "__main__":
                 # Neu indizieren (überschreibt alten Index)
                 logger.info("🔄 Indexing PDFs for RAG...")
                 rag = RAGManager(vector_store_path="vector_store")
-                
+
                 # Alten Index löschen
                 if index_exists:
                     import shutil
+
                     shutil.rmtree(vector_store_path)
                     logger.info("🗑️  Deleted old index")
                     rag = RAGManager(vector_store_path="vector_store")
-                
+
                 num_indexed = rag.index_directory(
-                    directory=str(Path(__file__).parent),
-                    file_extensions=[".pdf"]
+                    directory=str(Path(__file__).parent), file_extensions=[".pdf"]
                 )
-                
+
                 if num_indexed > 0:
                     logger.info(f"✅ RAG indexed {num_indexed} document chunks")
                 else:

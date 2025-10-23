@@ -21,17 +21,17 @@ _SentenceTransformer = None
 def _ensure_rag_deps():
     """Lazy import of RAG dependencies - only loads when needed"""
     global _deps_loaded, _deps_available, _deps_error, _faiss, _np, _SentenceTransformer
-    
+
     if _deps_loaded:
         return _deps_available
-    
+
     _deps_loaded = True
-    
+
     try:
         import faiss as faiss_mod
         import numpy as np_mod
         from sentence_transformers import SentenceTransformer as ST
-        
+
         _faiss = faiss_mod
         _np = np_mod
         _SentenceTransformer = ST
@@ -130,12 +130,12 @@ class RAGManager:
     ) -> int:
         """
         Fügt Dokumente zum Index hinzu
-        
+
         Args:
             documents: Liste von Texten
             metadata: Optionale Metadaten (z.B. Dateinamen, IDs)
             chunk_size: Optional, für Text-Chunking
-            
+
         Returns:
             Anzahl hinzugefügter Dokumente
         """
@@ -218,12 +218,12 @@ class RAGManager:
     ) -> List[Tuple[str, float]]:
         """
         Retrieves relevante Dokumente für Query
-        
+
         Args:
             query: Suchanfrage
             k: Anzahl Ergebnisse
             score_threshold: Optional, minimaler Ähnlichkeits-Score
-            
+
         Returns:
             Liste von (document, score) Tupeln
         """
@@ -280,11 +280,11 @@ class RAGManager:
     def index_directory(self, directory: str, file_extensions: List[str] = None) -> int:
         """
         Indexiert alle Dateien in einem Verzeichnis
-        
+
         Args:
             directory: Pfad zum Verzeichnis
             file_extensions: Liste erlaubter Extensions (z.B. ['.txt', '.md'])
-            
+
         Returns:
             Anzahl indexierter Dateien
         """

@@ -165,50 +165,47 @@ def build_chat_prompt(user_question: str, context: Dict) -> str:
     return CHAT_WITH_CONTEXT_TEMPLATE.format(context=context_str, user_question=user_question)
 
 
-def build_chat_prompt_with_rag(
-    user_question: str, context: Dict, rag_documents: List[Dict]
-) -> str:
+def build_chat_prompt_with_rag(user_question: str, context: Dict, rag_documents: List[Dict]) -> str:
     """Erstellt vollständigen Chat-Prompt MIT RAG-Dokumenten
-    
+
     Args:
         user_question: Die Benutzerfrage
         context: Maschinendaten-Kontext (DB)
         rag_documents: Liste von RAG-Dokumenten mit 'content' und 'score'
-        
+
     Returns:
         Vollständiger Prompt mit RAG-Dokumenten
     """
     # Kontext aufbereiten (wie vorher)
     context_str = ""
-    
+
     if "machine" in context:
         context_str += f"Maschine: {context['machine']['name']}\n"
-    
+
     if "recent_measurements" in context:
         context_str += f"Messwerte: {len(context['recent_measurements'])} Einträge\n"
-    
+
     if "recent_events" in context:
         context_str += f"Events: {len(context['recent_events'])} Einträge\n"
-    
+
     # RAG-Dokumente formatieren
     if rag_documents:
         rag_str = ""
         for i, doc in enumerate(rag_documents, 1):
-            score = doc.get('score', 0.0)
-            content = doc.get('content', '').strip()
-            source = doc.get('source', 'Unbekannt')
-            
+            score = doc.get("score", 0.0)
+            content = doc.get("content", "").strip()
+            source = doc.get("source", "Unbekannt")
+
             rag_str += f"\n**Dokument {i}** (Relevanz: {score:.2f}, Quelle: {source}):\n"
             rag_str += f"{content}\n"
     else:
         rag_str = "Keine relevanten Dokumente gefunden."
-    
+
     return CHAT_WITH_RAG_TEMPLATE.format(
         context=context_str or "Keine Maschinendaten",
         rag_documents=rag_str,
-        user_question=user_question
+        user_question=user_question,
     )
-
 
 
 def build_anomaly_prompt(machine: Dict, anomalies: List[Dict], context: str) -> str:

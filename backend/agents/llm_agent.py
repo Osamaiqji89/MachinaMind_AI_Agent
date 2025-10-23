@@ -40,9 +40,9 @@ class LLMAgent:
         self.model = settings.llm_model
         self.temperature = settings.llm_temperature
         self.max_tokens = settings.llm_max_tokens
-        
+
         # Few-Shot Examples aktivieren (verbessert Antwort-Qualität, kostet ~350 Tokens)
-        self.use_few_shot = getattr(settings, 'llm_use_few_shot', True)  # Default: AN
+        self.use_few_shot = getattr(settings, "llm_use_few_shot", True)  # Default: AN
 
         # RAG Manager initialisieren
         self.rag_manager = None
@@ -50,7 +50,7 @@ class LLMAgent:
             try:
                 self.rag_manager = RAGManager(vector_store_path="vector_store")
                 stats = self.rag_manager.get_stats()
-                if stats['total_vectors'] > 0:
+                if stats["total_vectors"] > 0:
                     logger.info(f"✓ RAG enabled: {stats['total_vectors']} Dokumente indiziert")
                 else:
                     logger.warning("RAG Manager loaded but no documents indexed")
@@ -60,7 +60,10 @@ class LLMAgent:
 
         # Initialize client based on provider
         if self.provider == "huggingface":
-            if settings.huggingface_api_key and settings.huggingface_api_key != "hf_your_token_here":
+            if (
+                settings.huggingface_api_key
+                and settings.huggingface_api_key != "hf_your_token_here"
+            ):
                 self.client = "huggingface"  # Marker
                 self.api_key = settings.huggingface_api_key
                 self.base_url = settings.huggingface_base_url
@@ -79,42 +82,46 @@ class LLMAgent:
             self.client = None
             logger.warning(f"Provider {self.provider} not configured - using fallback")
 
-    async def query(self, user_message: str, context: Optional[Dict[str, Any]] = None) -> Tuple[str, List[str]]:
+    async def query(
+        self, user_message: str, context: Optional[Dict[str, Any]] = None
+    ) -> Tuple[str, List[str]]:
         """
         Sendet Query an LLM mit RAG-Unterstützung
-        
+
         Args:
             user_message: Benutzerfrage
             context: Zusätzlicher Kontext (Maschine, Messungen, etc.)
-            
+
         Returns:
             Tuple[answer, sources] - LLM-Antwort und RAG-Quellen
         """
         sources = []
         rag_documents = []
-        
+
         # RAG: Relevante Dokumente abrufen
         if self.rag_manager:
             try:
                 rag_results = self.rag_manager.retrieve(user_message, k=3, score_threshold=0.3)
                 if rag_results:
                     logger.info(f"RAG: {len(rag_results)} relevante Dokumente gefunden")
-                    
+
                     # Sources für Response aufbereiten
-                    sources = [f"Wartungsprotokoll (Score: {score:.2f})" for _, score in rag_results]
-                    
+                    sources = [
+                        f"Wartungsprotokoll (Score: {score:.2f})" for _, score in rag_results
+                    ]
+
                     # RAG-Dokumente für Prompt aufbereiten
                     rag_documents = [
                         {
                             "content": doc,
                             "score": score,
-                            "source": "Wartungsprotokoll_industrielle_Maschinen.pdf"
+                            "source": "Wartungsprotokoll_industrielle_Maschinen.pdf",
                         }
                         for doc, score in rag_results
                     ]
             except Exception as e:
                 logger.warning(f"RAG retrieval failed: {e}")
-        
+
         if not self.client:
             return self._fallback_response(user_message, context), sources
 
@@ -127,7 +134,7 @@ class LLMAgent:
                 for example in FEW_SHOT_EXAMPLES:
                     messages.append({"role": "user", "content": example["user"]})
                     messages.append({"role": "assistant", "content": example["assistant"]})
-                
+
                 logger.info(f"✓ Added {len(FEW_SHOT_EXAMPLES)} few-shot examples")
             else:
                 logger.info("Few-shot examples disabled (faster but lower quality)")
@@ -135,30 +142,22 @@ class LLMAgent:
             # User-Prompt mit korrektem Template
             if rag_documents:
                 # MIT RAG: Nutze build_chat_prompt_with_rag
-                user_prompt = build_chat_prompt_with_rag(
-                    user_message, 
-                    context or {}, 
-                    rag_documents
-                )
+                user_prompt = build_chat_prompt_with_rag(user_message, context or {}, rag_documents)
                 logger.info(f"Using RAG prompt with {len(rag_documents)} documents")
             else:
                 # OHNE RAG: Nutze build_chat_prompt
-                user_prompt = build_chat_prompt(
-                    user_message, 
-                    context or {}
-                )
+                user_prompt = build_chat_prompt(user_message, context or {})
                 logger.info("Using standard prompt (no RAG documents)")
-            
+
             messages.append({"role": "user", "content": user_prompt})
 
             # LLM Call mit Timeout
             logger.info(f"Sending query to {self.provider}: {user_message[:50]}...")
-            
+
             try:
                 if self.provider == "huggingface":
                     response = await asyncio.wait_for(
-                        self._query_huggingface(messages),
-                        timeout=30.0
+                        self._query_huggingface(messages), timeout=30.0
                     )
                 else:
                     # OpenAI-compatible API
@@ -169,10 +168,10 @@ class LLMAgent:
                             temperature=self.temperature,
                             max_tokens=self.max_tokens,
                         ),
-                        timeout=30.0
+                        timeout=30.0,
                     )
                     response = response.choices[0].message.content
-                    
+
                 logger.info("LLM response received successfully")
                 return response, sources
             except asyncio.TimeoutError:
@@ -188,25 +187,22 @@ class LLMAgent:
         # Konvertiere Chat-Format zu Text-Prompt
         prompt = "\n\n".join([f"{msg['role']}: {msg['content']}" for msg in messages])
         prompt += "\n\nassistant:"
-        
+
         # Korrekte URL-Konstruktion
         url = f"{self.base_url.rstrip('/')}/{self.model}"
-        
+
         logger.debug(f"HuggingFace API URL: {url}")
-        
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
+
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
         payload = {
             "inputs": prompt,
             "parameters": {
                 "max_new_tokens": self.max_tokens,
                 "temperature": self.temperature,
-                "return_full_text": False
-            }
+                "return_full_text": False,
+            },
         }
-        
+
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=payload, headers=headers) as response:
                 if response.status == 200:
@@ -222,11 +218,12 @@ class LLMAgent:
                     # Modell wird geladen
                     error_json = await response.json()
                     estimated_time = error_json.get("estimated_time", 20)
-                    raise Exception(f"Modell wird geladen, bitte warten Sie ca. {estimated_time} Sekunden und versuchen Sie es erneut.")
+                    raise Exception(
+                        f"Modell wird geladen, bitte warten Sie ca. {estimated_time} Sekunden und versuchen Sie es erneut."
+                    )
                 else:
                     error_text = await response.text()
                     raise Exception(f"HuggingFace API error {response.status}: {error_text}")
-
 
     def _format_context(self, context: Dict[str, Any]) -> str:
         """
@@ -252,8 +249,7 @@ class LLMAgent:
             parts.append(f"\n**Letzte Messwerte ({len(measurements)}):**")
             for m in measurements:
                 parts.append(
-                    f"- {m['sensor_type']}: {m['value']} {m.get('unit', '')} "
-                    f"({m['timestamp']})"
+                    f"- {m['sensor_type']}: {m['value']} {m.get('unit', '')} " f"({m['timestamp']})"
                 )
 
         if "recent_events" in context:
@@ -294,7 +290,7 @@ class LLMAgent:
                 response += f"\n**Events:** {len(events)} gesamt, davon {critical} kritisch\n"
                 for e in events[:3]:
                     response += f"- [{e['level']}] {e['message']}\n"
-                    
+
             if "machines" in context:
                 machines = context["machines"]
                 response += f"\n**Verfügbare Maschinen ({len(machines)}):**\n"
@@ -303,17 +299,17 @@ class LLMAgent:
         else:
             response += "_Kein Kontext verfügbar_\n"
 
-        response += "\n\n💡 **Hinweis:** " 
+        response += "\n\n💡 **Hinweis:** "
         if self.provider == "huggingface":
             response += "Setzen Sie Ihren Hugging Face API Key in der .env Datei: HUGGINGFACE_API_KEY=hf_..."
         else:
-            response += "Konfigurieren Sie einen LLM-Provider (OpenAI oder Hugging Face) in der .env Datei."
+            response += (
+                "Konfigurieren Sie einen LLM-Provider (OpenAI oder Hugging Face) in der .env Datei."
+            )
 
         return response
 
-    async def analyze_anomaly(
-        self, machine_name: str, anomalies: List[Dict], context: str
-    ) -> str:
+    async def analyze_anomaly(self, machine_name: str, anomalies: List[Dict], context: str) -> str:
         """
         Spezialisierte Anfrage für Anomalie-Analyse
         """
