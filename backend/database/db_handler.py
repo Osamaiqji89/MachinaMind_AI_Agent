@@ -29,7 +29,9 @@ class DatabaseHandler:
     @contextmanager
     def get_connection(self):
         """Context Manager für sichere DB-Connections"""
-        conn = sqlite3.connect(self.db_path)
+        # Convert Path to string, or use string as-is for :memory:
+        db_path_str = str(self.db_path) if not isinstance(self.db_path, str) else self.db_path
+        conn = sqlite3.connect(db_path_str)
         conn.row_factory = sqlite3.Row  # Dict-like access
         try:
             yield conn
