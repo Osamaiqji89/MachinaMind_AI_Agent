@@ -17,7 +17,7 @@ class DatabaseHandler:
 
     def __init__(self, db_path: str = "MachinaData.db"):
         self.db_path = db_path if db_path == ":memory:" else Path(db_path)
-        self._memory_conn = None  # Persistent connection for :memory: databases
+        self._memory_conn: sqlite3.Connection | None = None  # Persistent connection for :memory: databases
         self._ensure_db_exists()
 
     def _ensure_db_exists(self) -> None:
