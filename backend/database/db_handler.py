@@ -17,6 +17,7 @@ class DatabaseHandler:
 
     def __init__(self, db_path: str = "MachinaData.db"):
         self.db_path = db_path if db_path == ":memory:" else Path(db_path)
+        self._memory_conn = None  # Persistent connection for :memory: databases
         self._ensure_db_exists()
 
     def _ensure_db_exists(self) -> None:
@@ -24,6 +25,9 @@ class DatabaseHandler:
         # For in-memory DB or if file doesn't exist, initialize schema
         if self.db_path == ":memory:":
             logger.info(f"Creating new database at {self.db_path}")
+            # Create persistent connection for :memory: database
+            self._memory_conn = sqlite3.connect(":memory:")
+            self._memory_conn.row_factory = sqlite3.Row
             self._init_schema()
         elif isinstance(self.db_path, Path) and not self.db_path.exists():
             logger.info(f"Creating new database at {self.db_path}")
@@ -32,19 +36,29 @@ class DatabaseHandler:
     @contextmanager
     def get_connection(self):
         """Context Manager für sichere DB-Connections"""
-        # Convert Path to string, or use string as-is for :memory:
-        db_path_str = str(self.db_path) if not isinstance(self.db_path, str) else self.db_path
-        conn = sqlite3.connect(db_path_str)
-        conn.row_factory = sqlite3.Row  # Dict-like access
-        try:
-            yield conn
-            conn.commit()
-        except Exception as e:
-            conn.rollback()
-            logger.error(f"Database error: {e}")
-            raise
-        finally:
-            conn.close()
+        # For :memory: databases, reuse the persistent connection
+        if self._memory_conn is not None:
+            try:
+                yield self._memory_conn
+                self._memory_conn.commit()
+            except Exception as e:
+                self._memory_conn.rollback()
+                logger.error(f"Database error: {e}")
+                raise
+        else:
+            # For file-based databases, create a new connection each time
+            db_path_str = str(self.db_path) if not isinstance(self.db_path, str) else self.db_path
+            conn = sqlite3.connect(db_path_str)
+            conn.row_factory = sqlite3.Row  # Dict-like access
+            try:
+                yield conn
+                conn.commit()
+            except Exception as e:
+                conn.rollback()
+                logger.error(f"Database error: {e}")
+                raise
+            finally:
+                conn.close()
 
     def _init_schema(self) -> None:
         """Initialisiert DB-Schema"""
