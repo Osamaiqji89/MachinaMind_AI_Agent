@@ -1,0 +1,86 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+.env.local
+key_und_lopgdata.txt
+
+# C++/Qt
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+build/
+Build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+*.user
+*.autosave
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+*.qm
+.qmake.stash
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.qodo/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# Documentation Build
+docs/_build/
+docs/.doctrees/
+
+# Vector Stores
+*.faiss
+*.index
+chroma_db/
+
+# Models (large files)
+models/*.bin
+models/*.gguf
+models/*.safetensors
+
+# Backup
+*.bak
+*.backup
