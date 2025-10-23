@@ -75,8 +75,9 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.9.0'
+          version: '6.8.1'
           modules: 'qtcharts'
+          cache: true
       
       - name: Configure CMake
         run: |
@@ -167,8 +168,9 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.9.0'
+          version: '6.8.1'
           modules: 'qtcharts'
+          cache: true
       
       - name: Build Frontend
         run: |
