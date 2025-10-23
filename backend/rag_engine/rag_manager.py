@@ -3,9 +3,7 @@ RAG Manager
 Verwaltet Embeddings, Vector Store und Retrieval
 """
 
-import os
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 from loguru import logger
 
@@ -124,8 +122,8 @@ class RAGManager:
 
     def add_documents(
         self,
-        documents: List[str],
-        metadata: Optional[List[str]] = None,
+        documents: list[str],
+        metadata: list[str] | None = None,
         chunk_size: int = None,
     ) -> int:
         """
@@ -184,7 +182,7 @@ class RAGManager:
             logger.error(f"Failed to add documents: {e}")
             return 0
 
-    def _chunk_text(self, text: str, chunk_size: int, overlap: int) -> List[str]:
+    def _chunk_text(self, text: str, chunk_size: int, overlap: int) -> list[str]:
         """
         Teilt Text in überlappende Chunks
         """
@@ -215,7 +213,7 @@ class RAGManager:
 
     def retrieve(
         self, query: str, k: int = 5, score_threshold: float = None
-    ) -> List[Tuple[str, float]]:
+    ) -> list[tuple[str, float]]:
         """
         Retrieves relevante Dokumente für Query
 
@@ -243,7 +241,7 @@ class RAGManager:
 
             # Ergebnisse zusammenstellen
             results = []
-            for dist, idx in zip(distances[0], indices[0]):
+            for dist, idx in zip(distances[0], indices[0], strict=False):
                 if idx < len(self.documents):
                     score = float(1 / (1 + dist))  # Convert distance to similarity
 
@@ -277,7 +275,7 @@ class RAGManager:
         except Exception as e:
             logger.error(f"Failed to save index: {e}")
 
-    def index_directory(self, directory: str, file_extensions: List[str] = None) -> int:
+    def index_directory(self, directory: str, file_extensions: list[str] = None) -> int:
         """
         Indexiert alle Dateien in einem Verzeichnis
 

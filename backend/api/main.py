@@ -3,30 +3,28 @@ FastAPI Backend für MachinaMindAIAgent
 REST API für Frontend-Kommunikation, Agenten-Orchestrierung und Chat
 """
 
-import json
 import os
 import sys
-from pathlib import Path
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any
 
 # Add parent directory to path for imports
 backend_dir = Path(__file__).parent.parent
 if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
 
+from database.db_handler import DatabaseHandler
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from pydantic import BaseModel, Field
 
-from database.db_handler import DatabaseHandler
-
 # Lazy imports für agents (werden später implementiert)
 try:
-    from agents.data_agent import DataAgent
     from agents.analysis_agent import AnalysisAgent
+    from agents.data_agent import DataAgent
     from agents.llm_agent import LLMAgent
 except ImportError:
     logger.warning("Agent modules not yet available - running in limited mode")
@@ -41,14 +39,14 @@ except ImportError:
 class HealthResponse(BaseModel):
     status: str
     timestamp: str
-    db_stats: Dict[str, int]
+    db_stats: dict[str, int]
 
 
 class MachineResponse(BaseModel):
     id: int
     name: str
     type: str
-    location: Optional[str] = None
+    location: str | None = None
 
 
 class MeasurementResponse(BaseModel):
@@ -57,7 +55,7 @@ class MeasurementResponse(BaseModel):
     timestamp: str
     sensor_type: str
     value: float
-    unit: Optional[str] = None
+    unit: str | None = None
 
 
 class EventResponse(BaseModel):
@@ -70,20 +68,20 @@ class EventResponse(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=1000)
-    machine_id: Optional[int] = None
+    machine_id: int | None = None
     context_limit: int = Field(default=10, ge=1, le=100)
 
 
 class ChatResponse(BaseModel):
     answer: str
-    sources: List[str] = []
-    context_used: Dict[str, Any] = {}
+    sources: list[str] = []
+    context_used: dict[str, Any] = {}
     timestamp: str
 
 
 class AnalysisRequest(BaseModel):
     machine_id: int
-    sensor_type: Optional[str] = None
+    sensor_type: str | None = None
     time_range_minutes: int = Field(default=60, ge=1, le=1440)
 
 
@@ -91,7 +89,7 @@ class AnalysisResponse(BaseModel):
     machine_id: int
     anomalies_detected: int
     summary: str
-    details: List[Dict[str, Any]]
+    details: list[dict[str, Any]]
     timestamp: str
 
 
@@ -170,7 +168,7 @@ async def health_check():
 # ==================== Machines ====================
 
 
-@app.get("/machines", response_model=List[MachineResponse], tags=["Machines"])
+@app.get("/machines", response_model=list[MachineResponse], tags=["Machines"])
 async def get_machines():
     """Alle Maschinen abrufen"""
     db: DatabaseHandler = app.state.db
@@ -193,10 +191,10 @@ async def get_machine(machine_id: int):
 # ==================== Measurements ====================
 
 
-@app.get("/measurements/{machine_id}", response_model=List[MeasurementResponse], tags=["Data"])
+@app.get("/measurements/{machine_id}", response_model=list[MeasurementResponse], tags=["Data"])
 async def get_measurements(
     machine_id: int,
-    sensor_type: Optional[str] = Query(None),
+    sensor_type: str | None = Query(None),
     limit: int = Query(100, ge=1, le=1000),
 ):
     """Messwerte für Maschine abrufen"""
@@ -213,10 +211,10 @@ async def get_measurements(
 # ==================== Events ====================
 
 
-@app.get("/events", response_model=List[EventResponse], tags=["Events"])
+@app.get("/events", response_model=list[EventResponse], tags=["Events"])
 async def get_events(
-    machine_id: Optional[int] = Query(None),
-    level: Optional[str] = Query(None),
+    machine_id: int | None = Query(None),
+    level: str | None = Query(None),
     limit: int = Query(50, ge=1, le=500),
 ):
     """Events abrufen"""
@@ -317,7 +315,7 @@ async def analyze_machine(request: AnalysisRequest):
 
 @app.get("/reports", tags=["Reports"])
 async def get_reports(
-    machine_id: Optional[int] = Query(None), limit: int = Query(20, ge=1, le=100)
+    machine_id: int | None = Query(None), limit: int = Query(20, ge=1, le=100)
 ):
     """Reports abrufen"""
     db: DatabaseHandler = app.state.db
@@ -327,7 +325,7 @@ async def get_reports(
 
 @app.post("/reports", tags=["Reports"])
 async def create_report(
-    machine_id: Optional[int] = None,
+    machine_id: int | None = None,
     report_type: str = "manual",
     report_text: str = "",
 ):

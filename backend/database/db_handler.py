@@ -7,7 +7,7 @@ import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from loguru import logger
 
@@ -121,8 +121,8 @@ class DatabaseHandler:
         self,
         name: str,
         machine_type: str,
-        location: Optional[str] = None,
-        meta: Optional[str] = None,
+        location: str | None = None,
+        meta: str | None = None,
     ) -> int:
         """Fügt neue Maschine hinzu"""
         with self.get_connection() as conn:
@@ -133,7 +133,7 @@ class DatabaseHandler:
             )
             return cursor.lastrowid
 
-    def get_machine(self, machine_id: int) -> Optional[Dict[str, Any]]:
+    def get_machine(self, machine_id: int) -> dict[str, Any] | None:
         """Holt Maschine nach ID"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -141,7 +141,7 @@ class DatabaseHandler:
             row = cursor.fetchone()
             return dict(row) if row else None
 
-    def get_all_machines(self) -> List[Dict[str, Any]]:
+    def get_all_machines(self) -> list[dict[str, Any]]:
         """Holt alle Maschinen"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -155,8 +155,8 @@ class DatabaseHandler:
         machine_id: int,
         sensor_type: str,
         value: float,
-        unit: Optional[str] = None,
-        timestamp: Optional[datetime] = None,
+        unit: str | None = None,
+        timestamp: datetime | None = None,
     ) -> int:
         """Fügt Messwert hinzu"""
         if timestamp is None:
@@ -174,14 +174,14 @@ class DatabaseHandler:
     def get_measurements(
         self,
         machine_id: int,
-        sensor_type: Optional[str] = None,
+        sensor_type: str | None = None,
         limit: int = 100,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-    ) -> List[Dict[str, Any]]:
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> list[dict[str, Any]]:
         """Holt Messwerte mit optionalen Filtern"""
         query = "SELECT * FROM measurements WHERE machine_id = ?"
-        params: List[Any] = [machine_id]
+        params: list[Any] = [machine_id]
 
         if sensor_type:
             query += " AND sensor_type = ?"
@@ -201,7 +201,7 @@ class DatabaseHandler:
             cursor.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
 
-    def get_latest_measurement(self, machine_id: int, sensor_type: str) -> Optional[Dict[str, Any]]:
+    def get_latest_measurement(self, machine_id: int, sensor_type: str) -> dict[str, Any] | None:
         """Holt aktuellsten Messwert für Sensor"""
         measurements = self.get_measurements(machine_id, sensor_type, limit=1)
         return measurements[0] if measurements else None
@@ -213,8 +213,8 @@ class DatabaseHandler:
         machine_id: int,
         level: str,
         message: str,
-        details: Optional[str] = None,
-        timestamp: Optional[datetime] = None,
+        details: str | None = None,
+        timestamp: datetime | None = None,
     ) -> int:
         """Fügt Event hinzu"""
         if timestamp is None:
@@ -231,13 +231,13 @@ class DatabaseHandler:
 
     def get_events(
         self,
-        machine_id: Optional[int] = None,
-        level: Optional[str] = None,
+        machine_id: int | None = None,
+        level: str | None = None,
         limit: int = 50,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Holt Events mit optionalen Filtern"""
         query = "SELECT * FROM events WHERE 1=1"
-        params: List[Any] = []
+        params: list[Any] = []
 
         if machine_id:
             query += " AND machine_id = ?"
@@ -260,8 +260,8 @@ class DatabaseHandler:
         self,
         report_type: str,
         report_text: str,
-        machine_id: Optional[int] = None,
-        metadata: Optional[str] = None,
+        machine_id: int | None = None,
+        metadata: str | None = None,
     ) -> int:
         """Fügt AI-generierten Report hinzu"""
         with self.get_connection() as conn:
@@ -274,11 +274,11 @@ class DatabaseHandler:
             return cursor.lastrowid
 
     def get_reports(
-        self, machine_id: Optional[int] = None, limit: int = 20
-    ) -> List[Dict[str, Any]]:
+        self, machine_id: int | None = None, limit: int = 20
+    ) -> list[dict[str, Any]]:
         """Holt Reports"""
         query = "SELECT * FROM reports"
-        params: List[Any] = []
+        params: list[Any] = []
 
         if machine_id:
             query += " WHERE machine_id = ?"
@@ -294,7 +294,7 @@ class DatabaseHandler:
 
     # ====================== STATS & UTILITIES ======================
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Holt DB-Statistiken"""
         with self.get_connection() as conn:
             cursor = conn.cursor()

@@ -3,8 +3,7 @@ Analysis Agent
 Anomalieerkennung mit statistischen Methoden (IsolationForest, Z-Score)
 """
 
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 from loguru import logger
@@ -40,9 +39,9 @@ class AnalysisAgent:
     async def analyze(
         self,
         machine_id: int,
-        sensor_type: Optional[str] = None,
+        sensor_type: str | None = None,
         time_range_minutes: int = 60,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Hauptanalyse-Methode
 
@@ -93,7 +92,7 @@ class AnalysisAgent:
 
         return {"anomalies_detected": len(anomalies), "summary": summary, "details": anomalies}
 
-    def _group_by_sensor(self, measurements: List[Dict]) -> Dict[str, List[Dict]]:
+    def _group_by_sensor(self, measurements: list[dict]) -> dict[str, list[dict]]:
         """Gruppiert Messungen nach Sensor-Typ"""
         by_sensor = {}
         for m in measurements:
@@ -103,7 +102,7 @@ class AnalysisAgent:
             by_sensor[sensor].append(m)
         return by_sensor
 
-    def _detect_anomalies(self, sensor_name: str, data: List[Dict]) -> List[Dict]:
+    def _detect_anomalies(self, sensor_name: str, data: list[dict]) -> list[dict]:
         """
         Anomalieerkennung mit mehreren Methoden
 
@@ -125,7 +124,7 @@ class AnalysisAgent:
         if std > 0:
             z_scores = np.abs((values - mean) / std)
 
-            for i, (z, val, ts) in enumerate(zip(z_scores, values, timestamps)):
+            for _i, (z, val, ts) in enumerate(zip(z_scores, values, timestamps, strict=False)):
                 if z > 3.0:  # 3-Sigma-Regel
                     anomalies.append(
                         {
@@ -144,7 +143,7 @@ class AnalysisAgent:
                 iso_forest = _IsolationForest(contamination=0.1, random_state=42)
                 predictions = iso_forest.fit_predict(values.reshape(-1, 1))
 
-                for i, (pred, val, ts) in enumerate(zip(predictions, values, timestamps)):
+                for _i, (pred, val, ts) in enumerate(zip(predictions, values, timestamps, strict=False)):
                     if pred == -1:  # Anomalie
                         # Nur hinzufügen wenn nicht schon von Z-Score erkannt
                         existing = any(a["timestamp"] == ts for a in anomalies)
@@ -174,7 +173,7 @@ class AnalysisAgent:
         else:
             return "LOW"
 
-    def _create_summary(self, anomalies: List[Dict], measurements: List[Dict]) -> str:
+    def _create_summary(self, anomalies: list[dict], measurements: list[dict]) -> str:
         """Erstellt Zusammenfassung der Analyse"""
         if not anomalies:
             return f"Keine Anomalien gefunden in {len(measurements)} Messungen"

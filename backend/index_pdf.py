@@ -4,6 +4,7 @@ Lädt Wartungsprotokoll_industrielle_Maschinen.pdf und indiziert es
 """
 
 from pathlib import Path
+
 from loguru import logger
 from rag_engine.rag_manager import RAGManager
 
@@ -29,7 +30,7 @@ def index_maintenance_pdf():
 
     # Statistiken
     stats = rag.get_stats()
-    logger.info(f"✅ Indexierung abgeschlossen!")
+    logger.info("✅ Indexierung abgeschlossen!")
     logger.info(f"   - Chunks erstellt: {num_chunks}")
     logger.info(f"   - Total Dokumente: {stats['total_documents']}")
     logger.info(f"   - Total Vektoren: {stats['total_vectors']}")

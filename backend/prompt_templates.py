@@ -3,7 +3,6 @@ Zentrale Prompt-Templates für LLM-Agenten
 Versioniert und wiederverwendbar
 """
 
-from typing import Dict, List
 
 # ==================== System Prompts ====================
 
@@ -79,7 +78,7 @@ CHAT_WITH_RAG_TEMPLATE = """**Verfügbare Maschinendaten:**
 {user_question}
 
 **Antwort:**
-Beantworte die Frage basierend auf den bereitgestellten Dokumenten und Maschinendaten. 
+Beantworte die Frage basierend auf den bereitgestellten Dokumenten und Maschinendaten.
 Zitiere relevante Passagen aus den Dokumenten wenn möglich.
 """
 
@@ -124,7 +123,7 @@ FEW_SHOT_EXAMPLES = [
 # ==================== Utility Functions ====================
 
 
-def build_machine_context(machine: Dict, measurements: List[Dict], events: List[Dict]) -> str:
+def build_machine_context(machine: dict, measurements: list[dict], events: list[dict]) -> str:
     """Erstellt Maschinen-Kontext für Prompt"""
     measurements_str = "\n".join(
         [
@@ -148,7 +147,7 @@ def build_machine_context(machine: Dict, measurements: List[Dict], events: List[
     )
 
 
-def build_chat_prompt(user_question: str, context: Dict) -> str:
+def build_chat_prompt(user_question: str, context: dict) -> str:
     """Erstellt vollständigen Chat-Prompt (ohne RAG)"""
     # Kontext aufbereiten
     context_str = ""
@@ -165,7 +164,7 @@ def build_chat_prompt(user_question: str, context: Dict) -> str:
     return CHAT_WITH_CONTEXT_TEMPLATE.format(context=context_str, user_question=user_question)
 
 
-def build_chat_prompt_with_rag(user_question: str, context: Dict, rag_documents: List[Dict]) -> str:
+def build_chat_prompt_with_rag(user_question: str, context: dict, rag_documents: list[dict]) -> str:
     """Erstellt vollständigen Chat-Prompt MIT RAG-Dokumenten
 
     Args:
@@ -208,7 +207,7 @@ def build_chat_prompt_with_rag(user_question: str, context: Dict, rag_documents:
     )
 
 
-def build_anomaly_prompt(machine: Dict, anomalies: List[Dict], context: str) -> str:
+def build_anomaly_prompt(machine: dict, anomalies: list[dict], context: str) -> str:
     """Erstellt Anomalie-Analyse-Prompt"""
     anomalies_str = "\n".join(
         [

@@ -7,12 +7,9 @@ import json
 import random
 import time
 from dataclasses import dataclass
-from datetime import datetime
-from typing import Dict, List
-
-from loguru import logger
 
 from database.db_handler import DatabaseHandler
+from loguru import logger
 
 
 @dataclass
@@ -84,7 +81,7 @@ class MachineSimulator:
         self._anomaly_active = True
         self._anomaly_counter = random.randint(3, 10)  # Anomalie für 3-10 Messungen
 
-    def step(self) -> Dict[str, float]:
+    def step(self) -> dict[str, float]:
         """Führt einen Simulations-Schritt aus (alle Sensoren)"""
         readings = {}
         for sensor in self.sensors:
@@ -105,7 +102,7 @@ class DataSimulator:
     def __init__(self, db_handler: DatabaseHandler, interval: float = 1.0):
         self.db = db_handler
         self.interval = interval
-        self.machines: List[MachineSimulator] = []
+        self.machines: list[MachineSimulator] = []
         self._running = False
 
     def add_machine(self, machine_id: int, machine_type: str) -> None:
@@ -114,7 +111,7 @@ class DataSimulator:
         self.machines.append(simulator)
         logger.info(f"Added machine {machine_id} ({machine_type}) to simulator")
 
-    def _check_anomaly(self, machine: MachineSimulator, readings: Dict[str, float]) -> None:
+    def _check_anomaly(self, machine: MachineSimulator, readings: dict[str, float]) -> None:
         """Prüft auf Anomalien und loggt Events"""
         for sensor in machine.sensors:
             value = readings.get(sensor.name, 0)
@@ -196,6 +193,7 @@ if __name__ == "__main__":
     # RAG-Indizierung beim Start (falls PDFs vorhanden)
     try:
         from pathlib import Path
+
         from rag_engine.rag_manager import RAGManager
 
         pdf_files = list(Path(__file__).parent.glob("*.pdf"))
@@ -207,8 +205,8 @@ if __name__ == "__main__":
             index_exists = (vector_store_path / "faiss.index").exists()
 
             if index_exists and "--reindex" not in sys.argv:
-                logger.info(f"ℹ️  Vector store exists. Use --reindex to rebuild.")
-                logger.info(f"✅ RAG ready (use existing index)")
+                logger.info("ℹ️  Vector store exists. Use --reindex to rebuild.")
+                logger.info("✅ RAG ready (use existing index)")
             else:
                 # Neu indizieren (überschreibt alten Index)
                 logger.info("🔄 Indexing PDFs for RAG...")

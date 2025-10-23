@@ -4,11 +4,10 @@ Verantwortlich für Datenabruf, Validation und Präprozessierung
 """
 
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
-
-from loguru import logger
+from typing import Any
 
 from database.db_handler import DatabaseHandler
+from loguru import logger
 
 
 class DataAgent:
@@ -19,7 +18,7 @@ class DataAgent:
 
     def get_machine_context(
         self, machine_id: int, lookback_minutes: int = 60
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Sammelt vollständigen Kontext für eine Maschine
 
@@ -54,7 +53,7 @@ class DataAgent:
             "time_range": {"start": start_time.isoformat(), "end": end_time.isoformat()},
         }
 
-    def _compute_stats(self, measurements: List[Dict]) -> Dict[str, Any]:
+    def _compute_stats(self, measurements: list[dict]) -> dict[str, Any]:
         """Berechnet Basis-Statistiken für Messungen"""
         if not measurements:
             return {}
@@ -81,7 +80,7 @@ class DataAgent:
 
         return stats
 
-    def get_all_machines_summary(self) -> List[Dict[str, Any]]:
+    def get_all_machines_summary(self) -> list[dict[str, Any]]:
         """Holt Zusammenfassung aller Maschinen"""
         machines = self.db.get_all_machines()
         summaries = []
@@ -105,7 +104,7 @@ class DataAgent:
 
         return summaries
 
-    def validate_data_quality(self, machine_id: int) -> Dict[str, Any]:
+    def validate_data_quality(self, machine_id: int) -> dict[str, Any]:
         """
         Prüft Datenqualität (fehlende Werte, Ausreißer, etc.)
         """
@@ -136,7 +135,7 @@ class DataAgent:
                 issues.append(f"Zeitlücken gefunden: {len(gaps)} Lücken")
 
         # 3. Sensor-Coverage
-        sensors = set(m["sensor_type"] for m in measurements)
+        sensors = {m["sensor_type"] for m in measurements}
         expected_sensors = {"temperature", "vibration", "power_consumption"}  # Beispiel
         missing = expected_sensors - sensors
         if missing:

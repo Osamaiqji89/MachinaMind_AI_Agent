@@ -4,10 +4,10 @@ Wrapper für LLM-Anfragen (OpenAI, Anthropic, Hugging Face)
 Mit RAG-Unterstützung für Wartungsprotokolle
 """
 
-from typing import Any, Dict, List, Optional, Tuple
 import asyncio
-import aiohttp
+from typing import Any
 
+import aiohttp
 from loguru import logger
 
 try:
@@ -17,11 +17,10 @@ except ImportError:
 
 from config import settings
 from prompt_templates import (
-    SYSTEM_PROMPT,
     FEW_SHOT_EXAMPLES,
+    SYSTEM_PROMPT,
     build_chat_prompt,
     build_chat_prompt_with_rag,
-    build_machine_context,
 )
 
 # RAG Integration
@@ -83,8 +82,8 @@ class LLMAgent:
             logger.warning(f"Provider {self.provider} not configured - using fallback")
 
     async def query(
-        self, user_message: str, context: Optional[Dict[str, Any]] = None
-    ) -> Tuple[str, List[str]]:
+        self, user_message: str, context: dict[str, Any] | None = None
+    ) -> tuple[str, list[str]]:
         """
         Sendet Query an LLM mit RAG-Unterstützung
 
@@ -175,14 +174,14 @@ class LLMAgent:
                 logger.info("LLM response received successfully")
                 return response, sources
             except asyncio.TimeoutError:
-                logger.warning(f"LLM query timed out after 30s, using fallback")
+                logger.warning("LLM query timed out after 30s, using fallback")
                 return self._fallback_response(user_message, context), sources
 
         except Exception as e:
             logger.error(f"LLM query failed: {e}")
             return self._fallback_response(user_message, context), sources
 
-    async def _query_huggingface(self, messages: List[Dict[str, str]]) -> str:
+    async def _query_huggingface(self, messages: list[dict[str, str]]) -> str:
         """Sendet Anfrage an Hugging Face Inference API"""
         # Konvertiere Chat-Format zu Text-Prompt
         prompt = "\n\n".join([f"{msg['role']}: {msg['content']}" for msg in messages])
@@ -225,7 +224,7 @@ class LLMAgent:
                     error_text = await response.text()
                     raise Exception(f"HuggingFace API error {response.status}: {error_text}")
 
-    def _format_context(self, context: Dict[str, Any]) -> str:
+    def _format_context(self, context: dict[str, Any]) -> str:
         """
         [DEPRECATED] Alte Kontext-Formatierung
         Nutze stattdessen: build_chat_prompt() oder build_chat_prompt_with_rag()
@@ -266,10 +265,10 @@ class LLMAgent:
 
         return "\n".join(parts)
 
-    def _fallback_response(self, user_message: str, context: Optional[Dict]) -> str:
+    def _fallback_response(self, user_message: str, context: dict | None) -> str:
         """Fallback wenn kein LLM verfügbar"""
         response = f"**Ihre Frage:** {user_message}\n\n"
-        response += f"ℹ️ _LLM antwortet nicht oder ist nicht verfügbar. Hier sind die verfügbaren Daten:_\n\n"
+        response += "ℹ️ _LLM antwortet nicht oder ist nicht verfügbar. Hier sind die verfügbaren Daten:_\n\n"
 
         if context:
             if "machine" in context:
@@ -309,7 +308,7 @@ class LLMAgent:
 
         return response
 
-    async def analyze_anomaly(self, machine_name: str, anomalies: List[Dict], context: str) -> str:
+    async def analyze_anomaly(self, machine_name: str, anomalies: list[dict], context: str) -> str:
         """
         Spezialisierte Anfrage für Anomalie-Analyse
         """
