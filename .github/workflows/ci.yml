@@ -191,7 +191,7 @@ jobs:
           windeployqt MachinaMindAIAgent.exe
       
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: MachinaMindAIAgent-Windows-Release
           path: cpp_gui/build/Release/
