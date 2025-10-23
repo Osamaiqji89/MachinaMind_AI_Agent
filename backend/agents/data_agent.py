@@ -59,7 +59,7 @@ class DataAgent:
             return {}
 
         # Gruppiere nach Sensor-Typ
-        by_sensor = {}
+        by_sensor: dict[str, list[float]] = {}
         for m in measurements:
             sensor = m["sensor_type"]
             if sensor not in by_sensor:

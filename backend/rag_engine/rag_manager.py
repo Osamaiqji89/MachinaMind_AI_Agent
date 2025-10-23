@@ -52,7 +52,7 @@ class RAGManager:
 
     def __init__(
         self,
-        embedding_model: str = None,
+        embedding_model: str | None = None,
         vector_store_path: str = "vector_store",
     ):
         self.embedding_model_name = embedding_model or settings.embedding_model
@@ -62,8 +62,8 @@ class RAGManager:
         # Initialize components
         self.embedder = None
         self.index = None
-        self.documents = []  # Speichert Original-Dokumente
-        self.metadata = []  # Speichert Metadaten
+        self.documents: list[str] = []  # Speichert Original-Dokumente
+        self.metadata: list[dict] = []  # Speichert Metadaten
         self.dimension = 0
         self.rag_available = False
 
@@ -74,8 +74,9 @@ class RAGManager:
 
         try:
             logger.info(f"Loading embedding model: {self.embedding_model_name}")
-            self.embedder = _SentenceTransformer(self.embedding_model_name)
-            self.dimension = self.embedder.get_sentence_embedding_dimension()
+            if _SentenceTransformer is not None:
+                self.embedder = _SentenceTransformer(self.embedding_model_name)
+            self.dimension = self.embedder.get_sentence_embedding_dimension() if self.embedder else 0
             self.rag_available = True
             logger.info(f"✓ Embedding model loaded, dimension: {self.dimension}")
         except Exception as e:
@@ -96,7 +97,8 @@ class RAGManager:
         if index_path.exists() and _faiss and self.embedder:
             try:
                 self.index = _faiss.read_index(str(index_path))
-                logger.info(f"Loaded FAISS index with {self.index.ntotal} vectors")
+                if self.index:
+                    logger.info(f"Loaded FAISS index with {self.index.ntotal} vectors")
 
                 # Load documents
                 if docs_path.exists():
@@ -124,7 +126,7 @@ class RAGManager:
         self,
         documents: list[str],
         metadata: list[str] | None = None,
-        chunk_size: int = None,
+        chunk_size: int | None = None,
     ) -> int:
         """
         Fügt Dokumente zum Index hinzu
@@ -212,7 +214,7 @@ class RAGManager:
         return [c for c in chunks if c]  # Filter empty
 
     def retrieve(
-        self, query: str, k: int = 5, score_threshold: float = None
+        self, query: str, k: int = 5, score_threshold: float | None = None
     ) -> list[tuple[str, float]]:
         """
         Retrieves relevante Dokumente für Query
@@ -275,7 +277,7 @@ class RAGManager:
         except Exception as e:
             logger.error(f"Failed to save index: {e}")
 
-    def index_directory(self, directory: str, file_extensions: list[str] = None) -> int:
+    def index_directory(self, directory: str, file_extensions: list[str] | None = None) -> int:
         """
         Indexiert alle Dateien in einem Verzeichnis
 
@@ -333,9 +335,12 @@ class RAGManager:
 
     def get_stats(self) -> dict:
         """Liefert Statistiken zum Index"""
+        total_vectors = 0
+        if self.index is not None:
+            total_vectors = self.index.ntotal
         return {
             "total_documents": len(self.documents),
-            "total_vectors": self.index.ntotal if self.index else 0,
+            "total_vectors": total_vectors,
             "embedding_model": self.embedding_model_name,
             "dimension": self.dimension if self.embedder else 0,
         }

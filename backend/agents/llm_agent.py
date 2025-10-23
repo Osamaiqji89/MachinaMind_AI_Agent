@@ -10,10 +10,12 @@ from typing import Any
 import aiohttp
 from loguru import logger
 
+_AsyncOpenAI = None
 try:
-    from openai import AsyncOpenAI
+    from openai import AsyncOpenAI as _OpenAIClass
+    _AsyncOpenAI = _OpenAIClass
 except ImportError:
-    AsyncOpenAI = None
+    pass
 
 from config import settings
 from prompt_templates import (
@@ -24,10 +26,11 @@ from prompt_templates import (
 )
 
 # RAG Integration
+_RAGManagerClass = None
 try:
-    from rag_engine.rag_manager import RAGManager
+    from rag_engine.rag_manager import RAGManager as _RAGClass
+    _RAGManagerClass = _RAGClass
 except ImportError:
-    RAGManager = None
     logger.warning("RAG Manager not available")
 
 
@@ -45,9 +48,9 @@ class LLMAgent:
 
         # RAG Manager initialisieren
         self.rag_manager = None
-        if RAGManager:
+        if _RAGManagerClass:
             try:
-                self.rag_manager = RAGManager(vector_store_path="vector_store")
+                self.rag_manager = _RAGManagerClass(vector_store_path="vector_store")
                 stats = self.rag_manager.get_stats()
                 if stats["total_vectors"] > 0:
                     logger.info(f"✓ RAG enabled: {stats['total_vectors']} Dokumente indiziert")
@@ -70,9 +73,9 @@ class LLMAgent:
             else:
                 logger.warning("Hugging Face API key not set - LLM will use fallback mode")
                 self.client = None
-        elif self.provider == "openai" and AsyncOpenAI:
+        elif self.provider == "openai" and _AsyncOpenAI:
             if settings.openai_api_key:
-                self.client = AsyncOpenAI(api_key=settings.openai_api_key)
+                self.client = _AsyncOpenAI(api_key=settings.openai_api_key)
                 logger.info(f"✓ OpenAI configured (model: {self.model})")
             else:
                 logger.warning("OpenAI API key not set - LLM will use fallback mode")
@@ -155,12 +158,12 @@ class LLMAgent:
 
             try:
                 if self.provider == "huggingface":
-                    response = await asyncio.wait_for(
+                    response_text = await asyncio.wait_for(
                         self._query_huggingface(messages), timeout=30.0
                     )
                 else:
                     # OpenAI-compatible API
-                    response = await asyncio.wait_for(
+                    openai_response = await asyncio.wait_for(
                         self.client.chat.completions.create(
                             model=self.model,
                             messages=messages,
@@ -169,10 +172,10 @@ class LLMAgent:
                         ),
                         timeout=30.0,
                     )
-                    response = response.choices[0].message.content
+                    response_text = openai_response.choices[0].message.content
 
                 logger.info("LLM response received successfully")
-                return response, sources
+                return response_text, sources
             except asyncio.TimeoutError:
                 logger.warning("LLM query timed out after 30s, using fallback")
                 return self._fallback_response(user_message, context), sources
@@ -331,4 +334,5 @@ class LLMAgent:
 4. Schätze Dringlichkeit (Sofort/Heute/Diese Woche)
 """
 
-        return await self.query(prompt, None)
+        response_text, _sources = await self.query(prompt, None)
+        return response_text

@@ -94,7 +94,7 @@ class AnalysisAgent:
 
     def _group_by_sensor(self, measurements: list[dict]) -> dict[str, list[dict]]:
         """Gruppiert Messungen nach Sensor-Typ"""
-        by_sensor = {}
+        by_sensor: dict[str, list[dict]] = {}
         for m in measurements:
             sensor = m["sensor_type"]
             if sensor not in by_sensor:
@@ -138,7 +138,7 @@ class AnalysisAgent:
                     )
 
         # Methode 2: IsolationForest (wenn genug Daten)
-        if len(values) >= 20 and _ensure_sklearn():
+        if len(values) >= 20 and _ensure_sklearn() and _IsolationForest is not None:
             try:
                 iso_forest = _IsolationForest(contamination=0.1, random_state=42)
                 predictions = iso_forest.fit_predict(values.reshape(-1, 1))
@@ -181,7 +181,7 @@ class AnalysisAgent:
             return f"Keine Anomalien gefunden in {len(measurements)} Messungen"
 
         # Gruppiere nach Sensor
-        by_sensor = {}
+        by_sensor: dict[str, list[dict]] = {}
         for a in anomalies:
             sensor = a["sensor"]
             if sensor not in by_sensor:

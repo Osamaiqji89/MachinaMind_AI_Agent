@@ -104,11 +104,11 @@ async def lifespan(app: FastAPI):
     app.state.db = DatabaseHandler("MachinaData.db")
 
     # Initialize agents (if available)
-    if DataAgent:
+    if DataAgent is not None:
         app.state.data_agent = DataAgent(app.state.db)
-    if AnalysisAgent:
+    if AnalysisAgent is not None:
         app.state.analysis_agent = AnalysisAgent(app.state.db)
-    if LLMAgent:
+    if LLMAgent is not None:
         app.state.llm_agent = LLMAgent()
 
     logger.info("✅ Backend ready")
@@ -235,7 +235,7 @@ async def chat(request: ChatRequest):
     db: DatabaseHandler = app.state.db
 
     # Kontext sammeln
-    context = {}
+    context: dict[str, Any] = {}
 
     # Maschinen-spezifischer Kontext
     if request.machine_id:
@@ -253,7 +253,7 @@ async def chat(request: ChatRequest):
         context["recent_events"] = db.get_events(limit=request.context_limit)
 
     # LLM Query mit RAG-Unterstützung
-    if LLMAgent and hasattr(app.state, "llm_agent"):
+    if LLMAgent is not None and hasattr(app.state, "llm_agent"):
         llm: LLMAgent = app.state.llm_agent
         answer, sources = await llm.query(request.message, context)
     else:
@@ -285,7 +285,7 @@ async def analyze_machine(request: AnalysisRequest):
         raise HTTPException(status_code=404, detail="Machine not found")
 
     # Analysis durchführen
-    if AnalysisAgent and hasattr(app.state, "analysis_agent"):
+    if AnalysisAgent is not None and hasattr(app.state, "analysis_agent"):
         agent: AnalysisAgent = app.state.analysis_agent
         result = await agent.analyze(
             request.machine_id,
