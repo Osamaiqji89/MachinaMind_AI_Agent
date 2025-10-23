@@ -46,6 +46,21 @@ Willkommen zur Dokumentation des MachinaMind AI Agent Projekts!
   - Monitoring & Logging
   - Best Practices für Entwicklung vs. Produktion
 
+### 🖼️ Screenshots
+
+#### Dark Theme
+
+**CNC Maschine Übersicht**
+![Dark Theme - CNC Machine](images/dark_themeCNC.png)
+
+**Conveyor Belt Monitoring**
+![Dark Theme - Conveyor Belt](images/dark_themeConveyor-Belt-03.png)
+
+#### Light Theme
+
+**CNC Maschine Übersicht**
+![Light Theme - CNC Machine](images/light_themeCNC.png)
+
 ### 🔧 Setup & Konfiguration
 
 - **[OPENAI_SETUP.md](OPENAI_SETUP.md)** - OpenAI API Integration

@@ -1,0 +1,12 @@
+# Dieser Ordner enthält Bilder für die Dokumentation
+# 
+# Bitte verwende folgendes Namensschema:
+# - screenshot-<feature>.png (für UI Screenshots)
+# - diagram-<name>.png (für Diagramme)
+# - architecture-<modul>.png (für Architektur-Diagramme)
+#
+# Empfohlene Bildgrößen:
+# - Screenshots: max. 1920x1080
+# - Diagramme: max. 1200x800
+# 
+# Komprimiere Bilder vor dem Commit (z.B. mit pngquant)
