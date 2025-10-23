@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # Python Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///data/MachinaData.db
+      - LLM_PROVIDER=ollama
+      - LLM_MODEL=llama2
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./data:/app/data
+      - ./backend:/app
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      - ollama
+    networks:
+      - MachinaMindAIAgent-network
+
+  # Optional: Local LLM (Ollama)
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - MachinaMindAIAgent-network
+
+  # Optional: PostgreSQL (Production DB)
+  # postgres:
+  #   image: postgres:15-alpine
+  #   environment:
+  #     POSTGRES_DB: MachinaData
+  #     POSTGRES_USER: ai_user
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - MachinaMindAIAgent-network
+
+  # Data Simulator (optional)
+  simulator:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=sqlite:///data/MachinaData.db
+    volumes:
+      - ./data:/app/data
+      - ./backend:/app
+    command: python data_simulator.py 3600
+    depends_on:
+      - backend
+    networks:
+      - MachinaMindAIAgent-network
+
+volumes:
+  ollama_data:
+  # postgres_data:
+
+networks:
+  MachinaMindAIAgent-network:
+    driver: bridge
