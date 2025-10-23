@@ -76,7 +76,9 @@ class RAGManager:
             logger.info(f"Loading embedding model: {self.embedding_model_name}")
             if _SentenceTransformer is not None:
                 self.embedder = _SentenceTransformer(self.embedding_model_name)
-            self.dimension = self.embedder.get_sentence_embedding_dimension() if self.embedder else 0
+            self.dimension = (
+                self.embedder.get_sentence_embedding_dimension() if self.embedder else 0
+            )
             self.rag_available = True
             logger.info(f"✓ Embedding model loaded, dimension: {self.dimension}")
         except Exception as e:

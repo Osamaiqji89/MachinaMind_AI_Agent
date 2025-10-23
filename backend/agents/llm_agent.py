@@ -13,6 +13,7 @@ from loguru import logger
 _AsyncOpenAI = None
 try:
     from openai import AsyncOpenAI as _OpenAIClass
+
     _AsyncOpenAI = _OpenAIClass
 except ImportError:
     pass
@@ -29,6 +30,7 @@ from prompt_templates import (
 _RAGManagerClass = None
 try:
     from rag_engine.rag_manager import RAGManager as _RAGClass
+
     _RAGManagerClass = _RAGClass
 except ImportError:
     logger.warning("RAG Manager not available")
