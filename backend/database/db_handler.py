@@ -22,7 +22,10 @@ class DatabaseHandler:
     def _ensure_db_exists(self) -> None:
         """Erstellt DB-Datei falls nicht vorhanden"""
         # For in-memory DB or if file doesn't exist, initialize schema
-        if self.db_path == ":memory:" or not Path(self.db_path).exists():
+        if self.db_path == ":memory:":
+            logger.info(f"Creating new database at {self.db_path}")
+            self._init_schema()
+        elif isinstance(self.db_path, Path) and not self.db_path.exists():
             logger.info(f"Creating new database at {self.db_path}")
             self._init_schema()
 

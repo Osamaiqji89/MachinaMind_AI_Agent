@@ -63,7 +63,7 @@ class RAGManager:
         self.embedder = None
         self.index = None
         self.documents: list[str] = []  # Speichert Original-Dokumente
-        self.metadata: list[dict] = []  # Speichert Metadaten
+        self.metadata: list[str] = []  # Speichert Metadaten (Dateinamen/IDs)
         self.dimension = 0
         self.rag_available = False
 
