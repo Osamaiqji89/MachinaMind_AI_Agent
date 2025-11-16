@@ -2,11 +2,11 @@
 
 # UI-Datei aus dem ui-Verzeichnis
 set(UI_FILES
-    ${CMAKE_SOURCE_DIR}/cpp_gui/ui/MainWindow.ui
+    ${CMAKE_CURRENT_SOURCE_DIR}/../ui/MainWindow.ui
 )
 
 # Qt UI-Suchpfade setzen
-set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_SOURCE_DIR}/cpp_gui/ui)
+set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/../ui)
 
 add_library(MachinaMindAIAgent_View
     MainWindow.cpp
