@@ -79,7 +79,8 @@ void MainPresenter::onSendChatMessage(const QString& message) {
     userMsg.content = message;
     userMsg.timestamp = QDateTime::currentDateTime();
     m_model->addChatMessage(userMsg);
-    m_view->appendChatMessage("User", message);
+    // User-Nachricht wird bereits in der View angezeigt (onSendButtonClicked)
+    // m_view->appendChatMessage("User", message); // ENTFERNT - wird in View gemacht
 
     // Send to backend
     int machineId = m_model->selectedMachineId();
@@ -87,17 +88,19 @@ void MainPresenter::onSendChatMessage(const QString& message) {
     m_apiClient->sendChatMessage(
         message, machineId,
         [this](const QJsonDocument& doc) {
-            // Success
+            // Success - Entferne "Denke nach..." und zeige Antwort
             auto obj = doc.object();
             auto chatMsg = ChatMessage::fromJson(obj);
             m_model->addChatMessage(chatMsg);
             if (m_view) {
+                m_view->removeLastChatMessage();  // Entfernt "⏳ Denke nach..."
                 m_view->appendChatMessage("Assistant", chatMsg.content);
             }
         },
         [this](const QString& error) {
-            // Error
+            // Error - Entferne "Denke nach..." und zeige Fehler
             if (m_view) {
+                m_view->removeLastChatMessage();  // Entfernt "⏳ Denke nach..."
                 m_view->showError("Chat-Fehler: " + error);
             }
         });
@@ -116,6 +119,7 @@ void MainPresenter::onAnalyzeClicked() {
     }
 
     m_view->showInfo("Analyse wird durchgeführt...");
+    m_view->appendChatMessage("System", "⏳ Analysiere Maschine...");
 
     m_apiClient->analyzeMachine(
         machineId, QString(), 60,  // Letzten 60 Minuten
@@ -124,12 +128,14 @@ void MainPresenter::onAnalyzeClicked() {
             auto result = AnalysisResult::fromJson(doc.object());
             m_model->setAnalysisResult(result);
             if (m_view) {
+                m_view->removeLastChatMessage();  // Entfernt "⏳ Analysiere..."
                 m_view->setAnalysisResult(result.summary, result.anomaliesDetected);
             }
         },
         [this](const QString& error) {
             // Error
             if (m_view) {
+                m_view->removeLastChatMessage();  // Entfernt "⏳ Analysiere..."
                 m_view->showError("Analyse-Fehler: " + error);
             }
         });

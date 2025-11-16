@@ -91,6 +91,7 @@ public:
     virtual void showInfo(const QString& message) = 0;
     virtual void setConnectionStatus(bool connected) = 0;
     virtual void appendChatMessage(const QString& role, const QString& message) = 0;
+    virtual void removeLastChatMessage() = 0;  // Entfernt letzte Chat-Nachricht (z.B. "Denke nach...")
     virtual void updateMachineList(const QVector<Machine>& machines) = 0;
     virtual void updateChart(const QVector<Measurement>& measurements) = 0;
     virtual void updateEventsTable(const QVector<Event>& events) = 0;
