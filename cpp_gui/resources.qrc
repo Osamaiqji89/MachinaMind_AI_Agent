@@ -1,5 +1,11 @@
 <RCC>
   <qresource prefix="/">
+    <file>icons/chat-bot.png</file>
+    <file>icons/chat-botDark.png</file>
+    <file>icons/aiChat.png</file>
+    <file>icons/light.png</file>
+    <file>icons/night-mode.png</file>
+    <file>icons/question.png</file>
     <file>styles/dark_theme.qss</file>
     <file>styles/light_theme.qss</file>
   </qresource>
