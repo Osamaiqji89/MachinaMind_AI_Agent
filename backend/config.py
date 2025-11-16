@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     # RAG Settings
     embedding_model: str = "all-MiniLM-L6-v2"
-    vector_store_type: str = "faiss"  # faiss | chroma
+    vector_store_type: str = "faiss"  # faiss
     chunk_size: int = 500
     chunk_overlap: int = 50
 

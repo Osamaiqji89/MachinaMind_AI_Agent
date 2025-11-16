@@ -58,7 +58,6 @@ strict_equality = true
 module = [
     "langchain.*",
     "faiss.*",
-    "chromadb.*",
 ]
 ignore_missing_imports = true
 
