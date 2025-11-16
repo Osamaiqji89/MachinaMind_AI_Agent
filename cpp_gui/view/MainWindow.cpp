@@ -4,12 +4,14 @@
  */
 
 #include "MainWindow.h"
+#include "ui_MainWindow.h"
 
 #include <QApplication>
 #include <QFile>
 #include <QHBoxLayout>
 #include <QIODevice>
 #include <QLabel>
+#include <QListWidget>
 #include <QMessageBox>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -29,8 +31,9 @@
 namespace MachinaMindAIAgent {
 
 MainWindow::MainWindow(MainPresenter* presenter, QWidget* parent)
-    : QMainWindow(parent), ui(nullptr), m_presenter(presenter), 
+    : QMainWindow(parent), ui(new Ui::MainWindow), m_presenter(presenter), 
       m_backendProcess(nullptr), m_healthCheckTimer(nullptr), m_healthCheckAttempts(0) {
+    ui->setupUi(this);
     setupUi();
     setupConnections();
     // Backend starten
@@ -39,58 +42,60 @@ MainWindow::MainWindow(MainPresenter* presenter, QWidget* parent)
 
 MainWindow::~MainWindow() {
     // Backend beenden
-    if (m_healthCheckTimer) { // Nur noch Timer aufräumen
+    if (m_healthCheckTimer) {
         delete m_healthCheckTimer;
         m_healthCheckTimer = nullptr;
     }
     
-    // ui is nullptr, no need to delete
+    delete ui;
 }
 
 // ==================== UI Setup ====================
 
 void MainWindow::setupUi() {
     setWindowTitle("MachinaMindAIAgent - Industrial Machine Intelligence");
-    resize(1400, 900);
-
-    // Central Widget
-    auto* centralWidget = new QWidget(this);
-    setCentralWidget(centralWidget);
-
-    auto* mainLayout = new QVBoxLayout(centralWidget);
-
+    resize(1100, 800);
+    setFont(QFont("Roboto", 12));
     // Top Bar (Connection + Machine Selection)
-    auto* topLayout = new QHBoxLayout();
-    topLayout->addWidget(new QLabel("Server:"));
+    ui->topLayout->addWidget(new QLabel("Server:"), 0, 0);
 
     m_serverInput = new QLineEdit("http://localhost:8000");
-    topLayout->addWidget(m_serverInput);
+    ui->topLayout->addWidget(m_serverInput, 0, 1);
 
     auto* connectButton = new QPushButton("Verbinden");
-    topLayout->addWidget(connectButton);
+    ui->topLayout->addWidget(connectButton, 0, 2);
     connect(connectButton, &QPushButton::clicked, this, &MainWindow::onConnectButtonClicked);
+    ui->topLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Minimum), 0, 3);
 
-    topLayout->addSpacing(20);
-    topLayout->addWidget(new QLabel("Maschine:"));
+    ui->topLayout->addWidget(new QLabel("Maschine:"), 0, 3);
 
     m_machineComboBox = new QComboBox();
-    topLayout->addWidget(m_machineComboBox);
+    ui->topLayout->addWidget(m_machineComboBox, 0, 5);
     m_machineComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     auto* refreshButton = new QPushButton("Aktualisieren");
-    topLayout->addWidget(refreshButton);
+    ui->topLayout->addWidget(refreshButton, 0, 6);
     connect(refreshButton, &QPushButton::clicked, this, &MainWindow::onRefreshButtonClicked);
-
-    topLayout->addStretch();
+    ui->topLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum), 0, 7);
+    
+    // Chat Toggle Button (zeigt/versteckt Chat-Panel)
+    auto* chatToggleButton = new QPushButton();
+    chatToggleButton->setIcon(QIcon(":/icons/aiChat.png"));
+    chatToggleButton->setIconSize(QSize(30, 30));
+    chatToggleButton->setToolTip("Chat ein-/ausblenden");
+    chatToggleButton->setProperty("themeButton", true);
+    ui->topLayout->addWidget(chatToggleButton, 0, 8);
     
     // Dark/Light Mode Toggle Button (oben rechts)
-    auto* themeButton = new QPushButton("☀️");
+    auto* themeButton = new QPushButton();
+    themeButton->setIcon(QIcon(":/icons/light.png"));
+    themeButton->setIconSize(QSize(30, 30));
     themeButton->setToolTip("Theme wechseln (Dark/Light)");
     themeButton->setProperty("themeButton", true);
-    topLayout->addWidget(themeButton);
+    ui->topLayout->addWidget(themeButton, 0, 9);
     
     // Theme Toggle Funktionalität
-    connect(themeButton, &QPushButton::clicked, [themeButton]() {
+    connect(themeButton, &QPushButton::clicked, [this, themeButton]() {
         static bool isDarkMode = true;
         isDarkMode = !isDarkMode;
         
@@ -103,7 +108,15 @@ void MainWindow::setupUi() {
             }
             QString darkStyle = darkFile.readAll();
             qApp->setStyleSheet(darkStyle);
-            themeButton->setText("☀️");
+            themeButton->setIcon(QIcon(":/icons/light.png"));
+            
+            // Chat Header Icon für Dark Mode
+            if (m_chatHeaderLabel) {
+                QPixmap chatIcon(":/icons/chat-bot.png");
+                if (!chatIcon.isNull()) {
+                    m_chatHeaderLabel->setPixmap(chatIcon.scaled(32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                }
+            }
         } else {
             // Light Theme laden
             QFile lightFile(":/styles/light_theme.qss");
@@ -113,27 +126,27 @@ void MainWindow::setupUi() {
             }
             QString lightStyle = lightFile.readAll();
             qApp->setStyleSheet(lightStyle);
-            themeButton->setText("🌙");
+            themeButton->setIcon(QIcon(":/icons/night-mode.png"));
+            
+            // Chat Header Icon für Light Mode
+            if (m_chatHeaderLabel) {
+                QPixmap chatIcon(":/icons/chat-botDark.png");
+                if (!chatIcon.isNull()) {
+                    m_chatHeaderLabel->setPixmap(chatIcon.scaled(32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                }
+            }
         }
     });
-    
-    mainLayout->addLayout(topLayout);
-
-    // Main Content (Splitter)
-    auto* splitter = new QSplitter(Qt::Horizontal);
-
-    // Left: Chart + Events Table
-    auto* leftWidget = new QWidget();
-    auto* leftLayout = new QVBoxLayout(leftWidget);
 
     // Chart
     m_chartView = new QChartView();
     m_chartView->setRenderHint(QPainter::Antialiasing);
-    leftLayout->addWidget(m_chartView);
+    ui->leftLayout->addWidget(m_chartView);
 
     // Events Table
     m_eventsTable = new QTableWidget();
     m_eventsTable->setColumnCount(4);
+    m_eventsTable->setAlternatingRowColors(true);
     m_eventsTable->setHorizontalHeaderLabels({"Zeit", "Level", "Nachricht", "Maschine"});
     m_eventsTable->setMaximumHeight(250);
     m_eventsTable->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -156,19 +169,65 @@ void MainWindow::setupUi() {
     m_eventsTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);          // Nachricht
     m_eventsTable->horizontalHeader()->setSectionResizeMode(3, QHeaderView::ResizeToContents); // Maschine
 
-    leftLayout->addWidget(m_eventsTable);
+    ui->leftLayout->addWidget(m_eventsTable);
 
-    splitter->addWidget(leftWidget);
+    // Chat Toggle Funktionalität
+    connect(chatToggleButton, &QPushButton::clicked, [this, chatToggleButton]() {
+        static bool isChatVisible = false;
+        isChatVisible = !isChatVisible;
+        
+        ui->rightWidget->setVisible(isChatVisible);
+        chatToggleButton->setToolTip(isChatVisible ? "Chat ausblenden" : "Chat einblenden");
+    });
+    ui->rightWidget->setVisible(false);
 
-    // Right: Chat Interface
-    auto* rightWidget = new QWidget();
-    auto* rightLayout = new QVBoxLayout(rightWidget);
+    // AI Assistant Header mit Icon und Text
+    QWidget* chatHeaderWidget = new QWidget();
+    QHBoxLayout* chatHeaderLayout = new QHBoxLayout(chatHeaderWidget);
+    chatHeaderLayout->setContentsMargins(5, 5, 5, 5);
+    chatHeaderLayout->setSpacing(10);
+    
+    m_chatHeaderLabel = new QLabel();
+    QPixmap chatIcon(":/icons/chat-bot.png");  // Startet mit Dark Mode Icon
+    if (!chatIcon.isNull()) {
+        m_chatHeaderLabel->setPixmap(chatIcon.scaled(32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    } else {
+        m_chatHeaderLabel->setText("🤖");  // Fallback emoji
+    }
+    
+    QLabel* chatHeaderText = new QLabel("AI Assistant");
+    QFont headerFont;
+    headerFont.setPointSize(12);
+    headerFont.setBold(true);
+    chatHeaderText->setFont(headerFont);
+    
+    chatHeaderLayout->addWidget(m_chatHeaderLabel);
+    chatHeaderLayout->addWidget(chatHeaderText);
+    chatHeaderLayout->addStretch();
+    
+    ui->rightLayout->addWidget(chatHeaderWidget);
 
-    rightLayout->addWidget(new QLabel("AI Chat:"));
-
-    m_chatDisplay = new QTextEdit();
-    m_chatDisplay->setReadOnly(true);
-    rightLayout->addWidget(m_chatDisplay);
+    m_chatDisplay = new QListWidget();
+    m_chatDisplay->setFrameStyle(QFrame::NoFrame);
+    m_chatDisplay->setSpacing(4);
+    m_chatDisplay->setWordWrap(true);
+    m_chatDisplay->setSelectionMode(QAbstractItemView::NoSelection);
+    m_chatDisplay->setFocusPolicy(Qt::NoFocus);
+    m_chatDisplay->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_chatDisplay->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_chatDisplay->setResizeMode(QListView::Adjust);
+    m_chatDisplay->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+    
+    // Scroll-Geschwindigkeit in kleinen Schritten (5 Pixel pro Schritt)
+    m_chatDisplay->verticalScrollBar()->setSingleStep(5);
+    m_chatDisplay->verticalScrollBar()->setPageStep(100);
+    
+    ui->rightLayout->addWidget(m_chatDisplay);
+    
+    // Willkommensnachricht hinzufügen
+    appendChatMessage("System", 
+        "Willkommen! Ich bin Ihr KI-Assistent für industrielle Maschinen-Intelligenz.\n\n"
+        "Wählen Sie eine Maschine aus und ich kann Ihnen bei der Analyse helfen!");
 
     // Chat Input - QTextEdit für mehrzeilige Eingabe
     m_chatInput = new QTextEdit();
@@ -188,26 +247,23 @@ void MainWindow::setupUi() {
         m_chatInput->setFixedHeight(newHeight);
     });
     
-    rightLayout->addWidget(m_chatInput);
-
+    ui->rightLayout->addWidget(m_chatInput);
     // Buttons unter dem Chat Input
-    auto* chatButtonLayout = new QHBoxLayout();
-    m_sendButton = new QPushButton("Senden");
-    chatButtonLayout->addWidget(m_sendButton);
-
+    m_sendButton = new QPushButton("Senden ➤");
     auto* analyzeButton = new QPushButton("Analysieren");
-    chatButtonLayout->addWidget(analyzeButton);
-    
-    chatButtonLayout->addStretch();
-    rightLayout->addLayout(chatButtonLayout);
 
-    splitter->addWidget(rightWidget);
-    splitter->setSizes({800, 600});
-
-    mainLayout->addWidget(splitter);
+    ui->rightLayout->addWidget(m_sendButton);
+    ui->rightLayout->addWidget(analyzeButton);
 
     // Status Bar
     statusBar()->showMessage("Bereit");
+
+    // Splitter-Größen setzen: leftWidget nimmt den Rest, rightWidget bekommt 400px
+    QList<int> sizes;
+    sizes << (width() - 400) << 400;  // leftWidget | rightWidget (400px)
+    // Enable hover tracking for splitter handle
+    ui->splitter->handle(1)->setAttribute(Qt::WA_Hover, true);
+    ui->splitter->setSizes(sizes);
 
     // Store button references
     connect(m_sendButton, &QPushButton::clicked, this, &MainWindow::onSendButtonClicked);
@@ -218,9 +274,8 @@ void MainWindow::setupConnections() {
     connect(m_machineComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &MainWindow::onMachineSelectionChanged);
 
-    // Ctrl+Enter für Senden in chat input
-    QShortcut* sendShortcut = new QShortcut(QKeySequence("Ctrl+Return"), m_chatInput);
-    connect(sendShortcut, &QShortcut::activated, this, &MainWindow::onSendButtonClicked);
+    // Enter zum Senden, Shift+Enter für neue Zeile
+    m_chatInput->installEventFilter(this);
 }
 
 // ==================== Slots ====================
@@ -239,6 +294,13 @@ void MainWindow::onRefreshButtonClicked() {
 void MainWindow::onSendButtonClicked() {
     QString message = m_chatInput->toPlainText();
     if (!message.isEmpty()) {
+        // User-Nachricht anzeigen
+        appendChatMessage("User", message);
+        
+        // Status-Nachricht anzeigen
+        appendChatMessage("System", "⏳ Denke nach...");
+        
+        // An Presenter senden
         m_presenter->onSendChatMessage(message);
         m_chatInput->clear();
     }
@@ -251,6 +313,26 @@ void MainWindow::onAnalyzeButtonClicked() {
 void MainWindow::onConnectButtonClicked() {
     m_presenter->onConnectClicked(m_serverInput->text());
 }
+
+// ==================== Event Filter ====================
+
+bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
+    if (obj == m_chatInput && event->type() == QEvent::KeyPress) {
+        QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
+        
+        // Enter ohne Shift → Senden
+        if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
+            if (!(keyEvent->modifiers() & Qt::ShiftModifier)) {
+                onSendButtonClicked();
+                return true; // Event gefiltert, nicht weiter propagieren
+            }
+            // Shift+Enter → Neue Zeile (Standard-Verhalten)
+        }
+    }
+    
+    return QMainWindow::eventFilter(obj, event);
+}
+
 // ==================== IMainView Interface ====================
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -275,27 +357,111 @@ void MainWindow::setConnectionStatus(bool connected) {
     statusBar()->showMessage(status);
 }
 
-void MainWindow::appendChatMessage(const QString& role, const QString& message) {
-    QString formatted;
-    if (role == "User") {
-        formatted = QString("<p><b style='color: #007BFF;'>🧑 User:</b> %1</p>").arg(message);
-    } else {
-        // AI Antwort formatieren - Sterne entfernen und als Überschriften formatieren
-        QString processedMessage = message;
-        processedMessage = processedMessage.toHtmlEscaped();
-        // ** entfernen und als Überschriften formatieren
-        processedMessage = processedMessage.replace(QRegularExpression("\\*\\*([^*]+)\\*\\*"), 
-                                                   "<h4 style='margin: 10px 0 5px 0;'>\\1</h4>");
-        
-        // Normale Zeilenumbrüche
-        processedMessage = processedMessage.replace("\n", "<br>");
-        
-        formatted = QString("<p><b style='color: green;'>🤖 Assistant:</b></p>%1")
-                        .arg(processedMessage);
+void MainWindow::removeLastChatMessage() {
+    int count = m_chatDisplay->count();
+    if (count > 0) {
+        QListWidgetItem* item = m_chatDisplay->takeItem(count - 1);
+        delete item;
     }
+}
 
-    m_chatDisplay->append(formatted);
-    m_chatDisplay->verticalScrollBar()->setValue(m_chatDisplay->verticalScrollBar()->maximum());
+void MainWindow::appendChatMessage(const QString& role, const QString& message) {
+    // Erstelle ein Widget für die Nachricht
+    QWidget* messageWidget = new QWidget();
+    messageWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+    QHBoxLayout* layout = new QHBoxLayout(messageWidget);
+    layout->setContentsMargins(8, 5, 8, 5);
+    layout->setSpacing(0);
+    
+    // Erstelle das Label für die Bubble
+    QLabel* bubble = new QLabel();
+    bubble->setWordWrap(true);
+    bubble->setTextFormat(Qt::RichText);
+    bubble->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    bubble->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+    
+    // Maximale Breite für Bubbles (80% der Chat-Breite)
+    int maxBubbleWidth = m_chatDisplay->width() * 0.8;
+    bubble->setMaximumWidth(maxBubbleWidth);
+    
+    // Text verarbeiten
+    QString processedMessage = message.toHtmlEscaped().replace("\n", "<br>");
+    processedMessage = processedMessage.replace(QRegularExpression("\\*\\*([^*]+)\\*\\*"), "<b>\\1</b>");
+    
+    if (role == "User") {
+        // User Bubble - Rechts, blau
+        layout->addStretch(3);
+        
+        bubble->setText(QString(
+            "<div style='padding: 2px;'>"
+            "<div style='font-size: 9pt; margin-bottom: 4px;'><b>🧑 You</b></div>"
+            "<div style='font-size: 10pt;'>%1</div>"
+            "</div>"
+        ).arg(processedMessage));
+        
+        bubble->setStyleSheet(
+            "QLabel { "
+            "  background-color: rgba(52, 152, 219, 0.3); "
+            "  padding: 10px 12px; "
+            "  border-radius: 15px; "
+            "}"
+        );
+        layout->addWidget(bubble, 7);
+        
+    } else if (role == "System") {
+        // System Bubble - Zentriert, grau
+        layout->addStretch(1);
+        
+        bubble->setText(QString(
+            "<div style='padding: 2px; text-align: center;'>"
+            "<div style='font-size: 9pt; color: #888;'>%1</div>"
+            "</div>"
+        ).arg(processedMessage));
+        
+        bubble->setStyleSheet(
+            "QLabel { "
+            "  background-color: rgba(128, 128, 128, 0.2); "
+            "  padding: 6px 12px; "
+            "  border-radius: 15px; "
+            "}"
+        );
+        layout->addWidget(bubble, 8);
+        layout->addStretch(1);
+        
+    } else {
+        // AI/Assistant Bubble - Links, grün/blau
+        bubble->setText(QString(
+            "<div style='padding: 2px;'>"
+            "<div style='font-size: 9pt; margin-bottom: 4px;'><b>🤖 AI Assistant</b></div>"
+            "<div style='font-size: 10pt;'>%1</div>"
+            "</div>"
+        ).arg(processedMessage));
+        
+        bubble->setStyleSheet(
+            "QLabel { "
+            "  background-color: rgba(146, 201, 255, 0.25); "
+            "  padding: 10px 12px; "
+            "  border-radius: 15px; "
+            "}"
+        );
+        layout->addWidget(bubble, 7);
+        layout->addStretch(3);
+    }
+    
+    // Größe korrekt berechnen
+    messageWidget->adjustSize();
+    QSize widgetSize = messageWidget->sizeHint();
+    if (widgetSize.height() < 80) {
+        widgetSize.setHeight(80); // Mindesthöhe für kleine Nachrichten
+    }
+    // Füge zur Liste hinzu
+    QListWidgetItem* item = new QListWidgetItem(m_chatDisplay);
+    item->setSizeHint(widgetSize);
+    m_chatDisplay->addItem(item);
+    m_chatDisplay->setItemWidget(item, messageWidget);
+    
+    // Auto-scroll nach unten
+    m_chatDisplay->scrollToBottom();
 }
 
 void MainWindow::updateMachineList(const QVector<Machine>& machines) {
@@ -348,24 +514,30 @@ void MainWindow::updateEventsTable(const QVector<Event>& events) {
         m_eventsTable->setItem(i, 2, new QTableWidgetItem(event.message));
         m_eventsTable->setItem(i, 3, new QTableWidgetItem(QString::number(event.machineId)));
 
-        // Color coding
+        // Color coding - Farben mit höherer Alpha für bessere Sichtbarkeit
         QColor color;
+        QColor textColor = QColor(255, 255, 255); // Weißer Text standardmäßig
         switch (event.level) {
             case Event::Critical:
-                color = QColor(255, 0, 0, 50);
+                color = QColor(255, 0, 0, 100);      // Rot mit mehr Deckkraft
+                textColor = QColor(255, 255, 255);    // Weißer Text
                 break;
             case Event::Error:
-                color = QColor(255, 100, 0, 50);
+                color = QColor(255, 100, 0, 100);    // Orange mit mehr Deckkraft
+                textColor = QColor(255, 255, 255);    // Weißer Text
                 break;
             case Event::Warning:
-                color = QColor(255, 200, 0, 50);
+                color = QColor(255, 200, 0, 100);    // Gelb mit mehr Deckkraft
+                textColor = QColor(50, 50, 50);       // Dunkler Text für Kontrast
                 break;
             default:
-                color = QColor(255, 255, 255);
+                color = QColor(52, 73, 94, 0);          // Standard Theme Hintergrund
+                textColor = QColor(236, 240, 241);    // Standard Text
         }
 
         for (int col = 0; col < 4; ++col) {
             m_eventsTable->item(i, col)->setBackground(color);
+            m_eventsTable->item(i, col)->setForeground(textColor);
         }
     }
     

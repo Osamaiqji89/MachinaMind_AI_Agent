@@ -15,6 +15,7 @@
 #include <QScrollBar>
 #include <QTableWidget>
 #include <QTextEdit>
+#include <QListWidget>
 #include <QLabel>
 #include <QtCharts/QChartView>
 #include <QCloseEvent>
@@ -47,6 +48,7 @@ public:
     void showInfo(const QString& message) override;
     void setConnectionStatus(bool connected) override;
     void appendChatMessage(const QString& role, const QString& message) override;
+    void removeLastChatMessage() override;
     void updateMachineList(const QVector<Machine>& machines) override;
     void updateChart(const QVector<Measurement>& measurements) override;
     void updateEventsTable(const QVector<Event>& events) override;
@@ -61,6 +63,7 @@ private slots:
 
 protected:
     void closeEvent(QCloseEvent *event) override;
+    bool eventFilter(QObject* obj, QEvent* event) override;
 
 private:
     void setupUi();
@@ -75,12 +78,13 @@ private:
 
     // UI Components (wenn nicht via Designer)
     QComboBox* m_machineComboBox;
-    QTextEdit* m_chatDisplay;
-    QTextEdit* m_chatInput;  // Geändert von QLineEdit zu QTextEdit
+    QListWidget* m_chatDisplay;  // Geändert von QTextEdit zu QListWidget
+    QTextEdit* m_chatInput; 
     QPushButton* m_sendButton;
     QTableWidget* m_eventsTable;
     QChartView* m_chartView;
     QLineEdit* m_serverInput;
+    QLabel* m_chatHeaderLabel;  // AI Assistant Header mit Theme-aware Icon
     
     // Backend Process
     QProcess* m_backendProcess;
